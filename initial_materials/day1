@@ -1,0 +1,43 @@
+Note: to do on your laptop unless otherwise stated
+
+0. General Setup (for both your laptop and sherlock - the hpc we will mainly be using):
+    * vim (or your preferred editor)
+        - common editors: gvim, emacs, gedit. I highly recommend either gvim or emacs (or just vim)
+        https://www.tutorialspoint.com/vim/vim_getting_familiar.htm
+        https://www.gnu.org/software/emacs/tour/ 
+ 
+    * tmux
+       - if you have never used tmux before, it is super beneficial when it comes to HPC life and I highly recommend it
+
+    * Setup your bashrc settings
+        
+1. In C, implement a naive matrix vector multiplication for one thread and time it.
+
+2. Learn a little about the architecture of your laptop v. the machine Sherlock:
+    - using the command line:
+        $ lscpu
+    - things to note:
+        1. # cpus:
+        2. # threads per cpu:
+        3. # cores:
+        4. # cache sizes:
+            - L1:
+            - L2:
+            - L3:
+        5. max MHz and min MHz:
+            - read up on what makes a system go at the minimum MHz
+        6. any interesting flags? Look up a few.
+        7. what type of HPC is this? (read Pacheco p. 32-35)
+
+    - using the command line:
+        $ cat /proc/meminfo
+    - things to note:
+        (Write a list that you find relevant)
+
+
+
+
+        
+
+
+

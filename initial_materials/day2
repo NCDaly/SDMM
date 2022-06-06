@@ -1,0 +1,13 @@
+NOTE: to do on your laptop
+
+0. Discuss the properties of sherlock and your laptop. 
+
+1. Implement helloworld with pthreads
+
+2. Implement a parallel naive matrix vector multiplication on 2 threads and time it
+
+3. Find an non-naive method of matrix vector multiplication. Do your best to implement it (using again just one thread)
+
+4. Does the method you chose allow for parallelism? If so, try to parallize it across threads.
+
+

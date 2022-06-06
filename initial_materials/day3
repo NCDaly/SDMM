@@ -1,0 +1,9 @@
+0. Create a python tester file for your C code
+    https://realpython.com/python-testing/
+    Video: https://www.youtube.com/watch?v=FxSsnHeWQBY
+1. Create a makefile for one of the programs you wrote
+    the make file should contain 
+        * a general create of the object files needed
+        * clean up
+        * test
+2. Continue day2 material.

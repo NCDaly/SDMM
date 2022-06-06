@@ -1,0 +1,25 @@
+As a team, we want to do the following three things and hold discussions.
+
+1. Implement a variety of matrix vector multiplication strategies on one thread. Understand the nuances and why some of the algorithms are better than others
+
+2. Implement a variety of matrix vector multiplication strategies using multiple threads.
+
+3. Implement a variety of matrix vector multiplication strategies using both threads and nodes.
+
+You may be wondering why a variety for each one of these items and not just go after one.
+As you will discover, depending on the hardware and on the goal of a problem, certain algorithms have benefits over others. It is good to have an understanding of these nuances as we plod on.
+
+##########################
+
+4. Implement matrix matrix multiplication strategies
+
+5. Implement a simple form of the Polynomial Code MM 
+
+##########################
+Once we have a solid foothold on the above, we get to tackle the unknown (insert music).
+
+6. Think outside the box. Do some reading. Come up with another code we can implement. 
+    Questions to think about:
+        * what properties should we or could we desire (depending on use case)?
+       
+
