@@ -2,6 +2,11 @@ NOTE: to do on your laptop
 
 0. Discuss the properties of sherlock and your laptop. 
 
+0.1. Write a python script that uses CDLL library to run your naive matrix vector multiplication.
+    a. look up CDLL and how to use it
+    b. create a matrix in python and try to use your C file to run it.
+    c. Note: you must have a shared object file to do so. 
+
 1. Implement helloworld with pthreads
 
 2. Implement a parallel naive matrix vector multiplication on 2 threads and time it
