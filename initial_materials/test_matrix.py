@@ -3,7 +3,9 @@ import unittest
 
 libmat = CDLL("/home/nathandaly/sdmm-22/initial_materials/matrix.so")
 
-class TestMult(unittest.TestCase):
+class TestMatrixMult(unittest.TestCase):
+
+    ''' Test the C matrix multiplication function against several examples. '''
     
     def test_mult1(self):
         
@@ -72,7 +74,10 @@ class TestMult(unittest.TestCase):
         
         self.assertEqual(pyMult(mat1, mat2), prod)
 
+
 class MATRIX(Structure):
+
+    ''' Clone of the Matrix struct from the C code. '''
     
     _fields_ = [("rows", c_int),
                 ("cols", c_int),
@@ -80,6 +85,8 @@ class MATRIX(Structure):
 
 def pack(pyMat):
 
+    ''' Converts a Python 2D list into a pointer to a C Matrix struct. '''
+    
     cMat = MATRIX()
     cMat.rows = len(pyMat)
     cMat.cols = len(pyMat[0])
@@ -89,6 +96,8 @@ def pack(pyMat):
 
 def unpack(cMat):
 
+    ''' Converts a pointer to a C Matrix struct into a Python 2D list. '''
+    
     rows = cMat.contents.rows
     cols = cMat.contents.cols
     pyMat = [[0 for j in range(cols)] for i in range(rows)]
@@ -99,8 +108,11 @@ def unpack(cMat):
 
 def pyMult(mat1, mat2):
 
+    ''' Multiply two matrices in their Python representation. '''
+
     return unpack(cMult(pack(mat1), pack(mat2)))
 
+''' Multiply two matrices in their C represenation. '''
 cMult = libmat.multiply
 cMult.restype = POINTER(MATRIX)
 
