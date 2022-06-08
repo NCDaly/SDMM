@@ -1,0 +1,17 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+typedef struct {
+  int rows;
+  int cols;
+  int **data;
+} Matrix;
+
+Matrix multiply(Matrix mat1, Matrix mat2) {
+
+  Matrix AB;
+  prod.rows = mat1.rows;
+  prod.cols = mat2.cols;
+  prod.data = malloc(prod.rows * prod.cols);
+  return product // TODO: Everything!!!
+}
