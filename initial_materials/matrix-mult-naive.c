@@ -2,19 +2,19 @@
 #include <stdio.h>
 
 typedef struct {
-  int rows;
-  int cols;
-  int *data;
+  u_int16_t rows;
+  u_int16_t cols;
+  int32_t *data;
 } Matrix;
 
-int *element(Matrix *mat, int i, int j) {
+int32_t *element(Matrix *mat, u_int16_t i, u_int16_t j) {
 
   if (i < 0 || i >= mat->rows) {
     return NULL;
   } else if (j < 0 || j >= mat->cols) {
     return NULL;
   } else {
-    return (int *) (mat->data + i * mat->cols + j);
+    return (int32_t *) (mat->data + i * mat->cols + j);
   }
 }
 
@@ -27,11 +27,11 @@ Matrix *multiply(Matrix *mat1, Matrix *mat2) {
   Matrix *prod = malloc(sizeof(prod));
   prod->rows = mat1->rows;
   prod->cols = mat2->cols;
-  prod->data = (int *) calloc(prod->rows * prod->cols, sizeof(int));
+  prod->data = (int32_t *) calloc(prod->rows * prod->cols, sizeof(int32_t));
 
-  for (int i = 0; i < prod->rows; i++) {
-    for (int j = 0; j < prod->cols; j++) {
-      for (int k = 0; k < mat1->cols; k++) {
+  for (u_int16_t i = 0; i < prod->rows; i++) {
+    for (u_int16_t j = 0; j < prod->cols; j++) {
+      for (u_int16_t k = 0; k < mat1->cols; k++) {
 	*element(prod, i, j) += *element(mat1, i, k) * *element(mat2, k, j);
       }
     }
@@ -45,14 +45,14 @@ Matrix *input_matrix() {
   Matrix *mat = malloc(sizeof(mat));
   
   printf("# rows: ");
-  scanf("%d", &mat->rows);
+  scanf("%hu", &mat->rows);
   printf("# cols: ");
-  scanf("%d", &mat->cols);
+  scanf("%hu", &mat->cols);
   
-  mat->data = (int *) calloc(mat->rows * mat->cols, sizeof(int));
+  mat->data = (int32_t *) calloc(mat->rows * mat->cols, sizeof(int32_t));
   printf("Enter matrix:\n");
-  for (int i = 0; i < mat->rows; i++) {
-    for (int j = 0; j < mat->cols; j++) {
+  for (u_int16_t i = 0; i < mat->rows; i++) {
+    for (u_int16_t j = 0; j < mat->cols; j++) {
       scanf("%d", element(mat, i, j));
     }
   }
@@ -62,8 +62,8 @@ Matrix *input_matrix() {
 
 void print_matrix(Matrix *mat) {
 
-  for (int i = 0; i < mat->rows; i++) {
-    for (int j = 0; j < mat->cols; j++) {
+  for (u_int16_t i = 0; i < mat->rows; i++) {
+    for (u_int16_t j = 0; j < mat->cols; j++) {
       printf("%4d", *element(mat, i, j));
     }
     printf("\n");
