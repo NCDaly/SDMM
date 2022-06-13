@@ -1,0 +1,10 @@
+TODO:
+
+1. finish Strassen
+    a. create a python script to test your basic functions
+    b. try timing your function using the clock function in time.h
+        https://www.tutorialspoint.com/c_standard_library/time_h.htm
+2. go through pthreads tutorial:
+    https://hpc-tutorials.llnl.gov/posix/
+
+

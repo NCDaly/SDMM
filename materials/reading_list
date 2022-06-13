@@ -1,6 +1,7 @@
 Papers on single cpu matrix multiplication:
 
 Papers on distributed matrix multiplciation:
+    Parallel Matrix Multiplication: a Systematic Journey
 
 Papers on coding theory:
 
@@ -14,6 +15,7 @@ Links for pthreads tutorials:
 
 Debugging threading with GDB:
     https://www.cs.swarthmore.edu/~newhall/unixhelp/gdb_pthreads.php
+
 
 Links for SHMEM Documentation:
     https://openshmem.org/site/sites/default/site_files/OpenSHMEM-1.4.pdf
