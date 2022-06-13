@@ -223,15 +223,9 @@ Matrix *multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t threshold) 
     return NULL;
   }
 
-  // Supply default threshold if passed 0
-  if (threshold == USE_DEFAULT) {
-    threshold = DEFAULT_THRESHOLD;
-  }
-
   // Initialize the new matrix
   prod->rows = mat1->rows;
   prod->cols = mat2->cols;
-  prod->data = (int32_t *) calloc(prod->rows * prod->cols, sizeof(int32_t));
 
   // Perform the appropriate multiplication algorithm
   if (mat1->cols < threshold) {
@@ -245,11 +239,9 @@ Matrix *naive_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod) {
 
   // Assume the matrices have the same inner dimension
 
-  // Initialize the new matrix
-  prod->rows = mat1->rows;
-  prod->cols = mat2->cols;
+  // Build the matrix
   prod->data = (int32_t *) calloc(prod->rows * prod->cols, sizeof(int32_t));
-
+  
   // Compute the product
   for (u_int16_t i = 0; i < prod->rows; i++) {
     for (u_int16_t j = 0; j < prod->cols; j++) {
@@ -300,9 +292,9 @@ Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t th
   compute_c22(temp, &sub3[1][1]);
   compose(sub3, prod);
 
-  // Free that memory!
+  // Clean up
   for (u_int8_t i = 0; i < 2; i++) {
-    for (u_int8_t j = 0; j < 0; j++) {
+    for (u_int8_t j = 0; j < 2; j++) {
       free(sub1[i][j].data);
       free(sub2[i][j].data);
       free(sub3[i][j].data);
@@ -318,7 +310,7 @@ Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t th
 
 Matrix *input_matrix() {
 
-  Matrix *mat = malloc(sizeof(mat));
+  Matrix *mat = malloc(sizeof(Matrix));
   
   printf("# rows: ");
   scanf("%hu", &mat->rows);
@@ -361,10 +353,10 @@ int main(int argc, char **argv) {
   Matrix *mat2 = input_matrix();
 
   printf("Product AB:\n");
-  Matrix *prod = (Matrix *) malloc(sizeof(prod));
-  multiply(mat1, mat2, prod, USE_DEFAULT);
+  Matrix *prod = (Matrix *) malloc(sizeof(Matrix));
+  multiply(mat1, mat2, prod, DEFAULT_THRESHOLD);
 
-  print_matrix(prod);
+  //print_matrix(prod);
 
   destroy_matrix(mat1);
   destroy_matrix(mat2);
@@ -372,3 +364,6 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+
+
+

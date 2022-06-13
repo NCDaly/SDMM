@@ -2,7 +2,6 @@
 #define MATRIX_MULT_STRASSEN_H
 
 #define DEFAULT_THRESHOLD 128
-#define USE_DEFAULT 0
 
 typedef struct {
   u_int16_t rows;
