@@ -7,9 +7,18 @@ Papers on coding theory:
 Papers on secure distributed matrix multiplication:
 
 
+Links for pthreads tutorials:
+    https://hpc-tutorials.llnl.gov/posix/
+    https://www.cs.cmu.edu/afs/cs/academic/class/15492-f07/www/pthreads.html
+    chapter 4 of Pacheco
+
+Debugging threading with GDB:
+    https://www.cs.swarthmore.edu/~newhall/unixhelp/gdb_pthreads.php
+
 Links for SHMEM Documentation:
     https://openshmem.org/site/sites/default/site_files/OpenSHMEM-1.4.pdf
     https://cray-openshmemx.readthedocs.io/en/latest/api_list.html#openshmem-v1-4-standard-features
+
 
 Links for OpenMPI Documentation:
     https://cray-openshmemx.readthedocs.io/en/latest/api_list.html#openshmem-v1-4-standard-features
