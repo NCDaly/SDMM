@@ -10,9 +10,33 @@ C_INT32_MAX = pow(2, 31) - 1
 MAX_SIZE = 1024
 MAX_VALUE = 1024
 
-class TestMatrixMult(unittest.TestCase):
+class TestMatrixFuncs(unittest.TestCase):
 
-    ''' Test the C matrix multiplication function against several examples. '''
+    ''' Test the C matrix multiplication function against several examples. '''\
+
+    def test_add0(self):
+
+        mat1 = [[2, 1, 4],
+                [0, 1, 1]]
+        
+        mat2 = [[6, 3, -1, 0],
+                [1, 1, 0, 4],
+                [-2, 5, 0, 2]]
+
+        self.assertEqual(callAdd(mat1, mat2), None)
+
+    def test_add1(self):
+
+        mat1 = [[4, 8],
+                [3, 7]]
+
+        mat2 = [[2, 0],
+                [6, 1]]
+
+        mat3 = [[6, 8],
+                [9, 8]]
+
+        self.assertEqual(callAdd(mat1, mat2), mat3)
     
     def test_mult1(self):
         
@@ -116,13 +140,21 @@ def unpack(cMat):
             pyMat[i][j] = cMat.contents.data[i * cols + j]
     return pyMat
 
-def callMultiply(mat1, mat2):
+def callMultiply(mat1, mat2, threshold=0):
 
     ''' Takes two matrices in their Python representation. 
     Converts them to C and calls the C multiply function,
     then returns the product in its Python representation. '''
 
-    return unpack(cMult(pack(mat1), pack(mat2)))
+    return unpack(cMult(pack(mat1), pack(mat2), pointer(MATRIX()), threshold))
+
+def callAdd(mat1, mat2):
+    
+    ''' Takes two matrices in their Python representation. 
+    Converts them to C and calls the C add function,
+    then returns the sum in its Python representation. '''
+
+    return unpack(cAdd(pack(mat1), pack(mat2), pointer(MATRIX())))
 
 def selfMultiply(mat1, mat2):
 
@@ -151,38 +183,46 @@ def generateMatrix(rows, cols):
         limit = MAX_VALUE
     
     return [[random.randint(-limit, limit) for j in range(cols)] for i in range(rows)]
-    #print(f"Generated matrix: {rows} rows, {cols} cols.")
-    #for row in mat:
-    #    print(*[f"{elem:4}" for elem in row])
-    return mat
                             
 def testRandomMatrices():
 
-    rows = random.randint(1, MAX_SIZE)
-    cols = random.randint(1, MAX_SIZE)
-    diag = random.randint(1, MAX_SIZE)
+    #rows = random.randint(1, MAX_SIZE)
+    #cols = random.randint(1, MAX_SIZE)
+    #diag = random.randint(1, MAX_SIZE)
+    rows = cols = diag = 1 << random.randint(3, 10)
 
     print(f"Generating matrices... ({rows} x {diag}) and ({diag} x {cols})")
     
+    time0 = time.time()
     mat1 = generateMatrix(rows, diag)
     mat2 = generateMatrix(diag, cols)
-    pyProd = selfMultiply(mat1, mat2)
-
-    print(f" Multiplying matrices...")
-
-    time0 = time.time()
-    cProd = callMultiply(mat1, mat2)
     time1 = time.time()
-    
-    print(f"  Pass: {cProd == pyProd}")
-    print(f"  Time: {time1 - time0} seconds")
-    print(f"  Total multiplications: {rows * cols * diag}")
-    print(f"  Multiplications / sec: {(rows * cols * diag) // (time1 - time0)}")
 
+    print(f"      DONE {time1 - time0} seconds")
+    print("Precomputing result...")
+    
+    time0 = time.time()
+    #pyProd = selfMultiply(mat1, mat2)
+    pyProd = callMultiply(mat1, mat2, rows + cols + diag)
+    time1 = time.time()
+
+    print(f"      DONE {time1 - time0} seconds")
+    print("Multiplying matrices...")
+    
+    for threshold in [32 << i for i in range(6)]:
+        time0 = time.time()
+        cProd = callMultiply(mat1, mat2, threshold)
+        time1 = time.time()
+        result = "PASS" if cProd == pyProd else "FAIL"
+        print(f" {threshold:4} {result} {time1 - time0} seconds")
+    
+    print()
 
 # Change return type of the C multiply function!
 cMult = libmat.multiply
+cAdd = libmat.add
 libmat.multiply.restype = POINTER(MATRIX)
+libmat.add.restype = POINTER(MATRIX)
 
 if __name__ == '__main__':
 
