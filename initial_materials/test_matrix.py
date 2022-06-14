@@ -186,6 +186,17 @@ def generateMatrix(rows, cols):
                             
 def testRandomMatrices():
 
+    libmat.setup_func(0, b"main/multiply")
+    libmat.setup_func(1, b"element")
+    libmat.setup_func(2, b"decompose")
+    libmat.setup_func(3, b"compose")
+    libmat.setup_func(4, b"compute_m")
+    libmat.setup_func(5, b"compute_c")
+    libmat.setup_func(6, b"add")
+    libmat.setup_func(7, b"subtract")
+    libmat.setup_func(8, b"naive_multiply")
+    libmat.setup_func(9, b"strassen_multiply")
+
     #rows = random.randint(1, MAX_SIZE)
     #cols = random.randint(1, MAX_SIZE)
     #diag = random.randint(1, MAX_SIZE)
@@ -202,19 +213,25 @@ def testRandomMatrices():
     print("Precomputing result...")
     
     time0 = time.time()
-    #pyProd = selfMultiply(mat1, mat2)
-    pyProd = callMultiply(mat1, mat2, rows + cols + diag)
+    pyProd = selfMultiply(mat1, mat2)
+    #pyProd = callMultiply(mat1, mat2, rows + cols + diag)
     time1 = time.time()
 
     print(f"      DONE {time1 - time0} seconds")
     print("Multiplying matrices...")
     
     for threshold in [32 << i for i in range(6)]:
+        libmat.reset_stats()
         time0 = time.time()
         cProd = callMultiply(mat1, mat2, threshold)
         time1 = time.time()
         result = "PASS" if cProd == pyProd else "FAIL"
         print(f" {threshold:4} {result} {time1 - time0} seconds")
+        print("***")
+        for funcID in range(10):
+            libmat.print_stats(funcID)
+        print("***")
+        print()
     
     print()
 

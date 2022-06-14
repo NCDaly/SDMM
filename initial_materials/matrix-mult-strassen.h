@@ -1,6 +1,8 @@
 #ifndef MATRIX_MULT_STRASSEN_H
 #define MATRIX_MULT_STRASSEN_H
 
+#include <stdlib.h>
+
 #define DEFAULT_THRESHOLD 128
 
 typedef struct {
