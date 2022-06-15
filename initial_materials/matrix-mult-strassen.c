@@ -17,16 +17,16 @@
 
 int32_t *element(Matrix *mat, u_int16_t i, u_int16_t j) {
 
-  enter_func(FUNC_ID_ELEMENT);
+  //enter_func(FUNC_ID_ELEMENT);
 
   if (i < 0 || i >= mat->rows) {
-    leave_func(FUNC_ID_ELEMENT);
+    //leave_func(FUNC_ID_ELEMENT);
     return NULL;
   } else if (j < 0 || j >= mat->cols) {
-    leave_func(FUNC_ID_ELEMENT);
+    //leave_func(FUNC_ID_ELEMENT);
     return NULL;
   } else {
-    leave_func(FUNC_ID_ELEMENT);
+    //leave_func(FUNC_ID_ELEMENT);
     return (int32_t *) (mat->data + i * mat->cols + j);
   }
 }

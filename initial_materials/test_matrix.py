@@ -1,4 +1,5 @@
 from ctypes import *
+import matplotlib.pyplot as pyplot
 import unittest
 import random
 import math
@@ -219,12 +220,19 @@ def testRandomMatrices():
 
     print(f"      DONE {time1 - time0} seconds")
     print("Multiplying matrices...")
+
+    dataX = []
+    dataY = []
+    dataXY = {}
     
-    for threshold in [32 << i for i in range(6)]:
+    for threshold in [16 << i for i in range(8)]:
         libmat.reset_stats()
         time0 = time.time()
         cProd = callMultiply(mat1, mat2, threshold)
         time1 = time.time()
+        dataX.append(f"{threshold}")
+        dataY.append(time1 - time0)
+        dataXY[threshold] = time1 - time0
         result = "PASS" if cProd == pyProd else "FAIL"
         print(f" {threshold:4} {result} {time1 - time0} seconds")
         print("***")
@@ -234,6 +242,8 @@ def testRandomMatrices():
         print()
     
     print()
+    pyplot.plot(dataX, dataY)
+    pyplot.show()
 
 # Change return type of the C multiply function!
 cMult = libmat.multiply
