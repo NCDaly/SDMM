@@ -243,6 +243,9 @@ def testRandomMatrices():
     
     print()
     pyplot.plot(dataX, dataY)
+    pyplot.xlabel("Minimum size for Strassen")
+    pyplot.ylabel("Runtime (s)")
+    pyplot.title(f"Multiplying two {rows} x {cols} matrices")
     pyplot.show()
 
 # Change return type of the C multiply function!
