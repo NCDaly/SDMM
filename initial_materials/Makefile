@@ -1,5 +1,5 @@
 CC = gcc
-FLAGS = -g -fPIC
+FLAGS = -g -fPIC -pthread
 SOURCE = matrix-mult-strassen
 STATS = function-stats
 FNAME = mmult
