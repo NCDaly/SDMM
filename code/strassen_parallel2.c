@@ -44,6 +44,17 @@ MMDATA2 multi_data2;*/
 //int num_th = 0;
 void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result);
 
+void print_matrix(int d, int **a) {
+    int i,j;
+    for (i = 0; i < d; i++) {
+        printf("row %i: ", i);
+        for (j = 0; j < d; j++) {
+            printf("%d ", a[i][j]);
+        }
+        printf("\n");
+    }
+}
+
 void add(int d, int **a, int **b, int **result) {
     //Add two nxn matrixs
     
@@ -71,15 +82,15 @@ void sub(int d, int **a, int **b, int **result) {
 }
 
 void mm_multi(int d, int **matrixm, int **matrixn, int **result) {
-    timerv.mult.start = clock();
+    //timerv.mult.start = clock();
 
     int i,j,k;
 
-    for (i = 0; i < d; i++) {
+    /*for (i = 0; i < d; i++) {
         for (j = 0; j < d; j++) {
             result[i][j] = 0;
         }
-    }
+    }*/
 
     for (i = 0; i < d; i++) {
         for (j = 0; j < d; j++) {
@@ -89,8 +100,8 @@ void mm_multi(int d, int **matrixm, int **matrixn, int **result) {
         }
     }
 
-    timerv.mult.end = clock();
-    timerv.mult.total += (double)(timerv.mult.end - timerv.mult.start);
+    //timerv.mult.end = clock();
+    //timerv.mult.total += (double)(timerv.mult.end - timerv.mult.start);
 }
 
 
@@ -133,54 +144,61 @@ void *p_str(void *threadarg) {
         hold[x] = malloc(sizeof(int) * len);
     }
     
-    printf("DID THAT\n");
+    printf("DECLARE HOLDS\n");
     if (id == 1) {
         add(len, i, j, hold);
-        printf("1 add\n");
+        printf("2 add i:%d j:%d hold%d\n", i[0][0], j[0][0], hold[0][0]);
+        print_matrix(len, hold);
         add(len, k, l, hold2);
-        printf("1 add\n");
+        printf("1 add k:%d l:%d hold2%d\n", k[0][0], l[0][0], hold2[0][0]);
+        print_matrix(len, hold2);
         str_mm(len, len, hold, hold2, result);
-        printf("1 str\n");
+        printf("1 str hold:%d hold2:%d result:%d\n", hold[0][0], hold2[0][0], result[0][0]);
+        print_matrix(len, result);
     }
     else if (id == 2) {
         add(len, i, j, hold);
-        printf("2 add\n");
+        printf("2 add i:%d j:%d hold%d\n", i[0][0], j[0][0], hold[0][0]);
+        print_matrix(len, hold);
         str_mm(len, len, hold, k, result);
-        printf("2 str\n");
+        printf("2 str hold:%d k:%d result%d\n", hold[0][0], k[0][0], result[0][0]);
+        print_matrix(len, result);
     }
     else if (id == 3) {
         sub(len, i, j, hold);
-        printf("3 sub\n");
+        printf("3 sub i:%d j:%d hold%d\n", i[0][0], j[0][0], hold[0][0]);
+        print_matrix(len, hold);
         str_mm(len, len, k, hold, result);
-        printf("3 str\n");
+        printf("3 str hold:%d k:%d result%d\n", hold[0][0], k[0][0], result[0][0]);
+        print_matrix(len, hold);
     }
     else if (id == 4) {
         sub(len, i, j, hold);
-        printf("4 sub\n");
+        printf("4 sub i:%d j:%d hold%d\n", i[0][0], j[0][0], hold[0][0]);
         str_mm(len, len, k, hold, result);
-        printf("4 str\n");
+        printf("4 str hold:%d k:%d result%d\n", hold[0][0], k[0][0], result[0][0]);
     }
     else if (id == 5) {
         add(len, i, j, hold);
-        printf("5 add\n");
+        printf("5 add i:%d j:%d hold%d\n", i[0][0], j[0][0], hold[0][0]);
         str_mm(len, len, hold, k, result);
-        printf("5 str\n");
+        printf("5 str hold:%d k:%d result%d\n", hold[0][0], k[0][0], result[0][0]);
     }
     else if (id == 6) {
         sub(len, i, j, hold);
-        printf("6 sub\n");
+        printf("6 sub i:%d j:%d hold%d\n", i[0][0], j[0][0], hold[0][0]);
         add(len, k, l, hold2);
-        printf("6 add\n");
+        printf("6 add k:%d l:%d hold2%d\n", k[0][0], l[0][0], hold2[0][0]);
         str_mm(len, len, hold, hold2, result);
-        printf("6 str\n");
+        printf("6 str hold:%d hold2:%d result:%d\n", hold[0][0], hold2[0][0], result[0][0]);
     }
     else if (id == 7) {
         sub(len, i, j, hold);
-        printf("7 sub\n");
+        printf("7 sub i:%d j:%d hold%d\n", i[0][0], j[0][0], hold[0][0]);
         add(len, k, l, hold2);
-        printf("7 add\n");
+        printf("7 add k:%d l:%d hold2%d\n", k[0][0], l[0][0], hold2[0][0]);
         str_mm(len, len, hold, hold2, result);
-        printf("7 str\n");
+        printf("7 str hold:%d hold2:%d result:%d\n", hold[0][0], hold2[0][0], result[0][0]);
     }
  
     printf("START FREE HOLD\n");
@@ -317,7 +335,7 @@ void *str_m7(void *threadarg) {
 
 void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
 {
-    printf("I GOT HERE!");
+    printf("IN str_mm\n");
     fflush(stdout);
 
     if (wt <= THRESH) {
@@ -348,7 +366,7 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
         for(t=0; t<num_threads; t++) {
             pthread_join(threads[t], &status);
         }*/
-        
+        printf("NAIVE MULTI\n");
         mm_multi(wt, matrixm, matrixn, result);
     }
     else {
