@@ -3,7 +3,7 @@
 #include <time.h>
 #include <pthread.h>
 
-#define THRESH 8
+#define THRESH 16
 
 struct timer {
     clock_t start;
@@ -22,13 +22,14 @@ struct vtimer {
 struct vtimer timerv;
 
 struct MMDATA{
+    int id;
     int len;
-    int **m;
-    int **n;
-    int **result;
+    int **i;
+    int **j;
+    int **k;
+    int **l;
+    int **m_result;
 };
-
-struct MMDATA multi_data;
 
 /*typedef struct {
     int len;
@@ -40,7 +41,8 @@ struct MMDATA multi_data;
 
 MMDATA2 multi_data2;*/
 
-int num_th = 0;
+//int num_th = 0;
+void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result);
 
 void add(int d, int **a, int **b, int **result) {
     //Add two nxn matrixs
@@ -91,49 +93,233 @@ void mm_multi(int d, int **matrixm, int **matrixn, int **result) {
     timerv.mult.total += (double)(timerv.mult.end - timerv.mult.start);
 }
 
-void *str_m1(void *arg) {
-    //int i,j,k;
 
-    int len, offset, x;
-    int **A11, **A22, **B11, **B22, **m, **n, **result;
-    int t_id = (int)arg;
+void *p_str(void *threadarg) {
+    int len, x, id;
+    int **i, **j, **k, **l, **result, **hold, **hold2;
+    struct MMDATA *my_data;
+ 
+    sleep(1);
+    my_data = (struct MMDATA *) threadarg;
+    id = my_data->id;
+    len = my_data->len;
+    i = my_data->i;
+    j = my_data->j;
+    k = my_data->k;
+    l = my_data->l;
+    result = my_data->m_result;
     
-    //printf("In thread #%d\n", offset);
-    
-    len = multi_data1.len;
-    offset = len / num_th;
-    m = multi_data.m;
-    n = multi_data.n;
-    result = multi_data.result;
-    
-    A11 = malloc(sizeof(int*) * len);
-    A22 = malloc(sizeof(int*) * len);
-    B11 = malloc(sizeof(int*) * len);
-    B22 = malloc(sizeof(int*) * len);
+    printf("In thread #%d\n", id);
+    fflush(stdout);
+    printf("len: %d\n", len);
+    printf("id: %d\n", id);
+
+    //A11 = malloc(sizeof(int*) * len);
+    //A22 = malloc(sizeof(int*) * len);
+    //B11 = malloc(sizeof(int*) * len);
+    //B22 = malloc(sizeof(int*) * len);
+    hold = malloc(sizeof(int*) * len);
+    hold2 = malloc(sizeof(int*) * len);
+
+    printf("%i: &hold %p and &hold2 %p\n", id, &hold, &hold2);
+
 
     for(x = 0; x < len; x++) {
-        A11[x] = malloc(sizeof(int) * len);
-        A12[x] = malloc(sizeof(int) * len);
-        A21[x] = malloc(sizeof(int) * len);
-        A22[x] = malloc(sizeof(int) * len);
+        //A11[x] = malloc(sizeof(int) * len);
+        //A12[x] = malloc(sizeof(int) * len);
+        //A21[x] = malloc(sizeof(int) * len);
+        //A22[x] = malloc(sizeof(int) * len);
+        hold[x] = malloc(sizeof(int) * len);
+        hold[x] = malloc(sizeof(int) * len);
+    }
+    
+    printf("DID THAT\n");
+    if (id == 1) {
+        add(len, i, j, hold);
+        printf("1 add\n");
+        add(len, k, l, hold2);
+        printf("1 add\n");
+        str_mm(len, len, hold, hold2, result);
+        printf("1 str\n");
+    }
+    else if (id == 2) {
+        add(len, i, j, hold);
+        printf("2 add\n");
+        str_mm(len, len, hold, k, result);
+        printf("2 str\n");
+    }
+    else if (id == 3) {
+        sub(len, i, j, hold);
+        printf("3 sub\n");
+        str_mm(len, len, k, hold, result);
+        printf("3 str\n");
+    }
+    else if (id == 4) {
+        sub(len, i, j, hold);
+        printf("4 sub\n");
+        str_mm(len, len, k, hold, result);
+        printf("4 str\n");
+    }
+    else if (id == 5) {
+        add(len, i, j, hold);
+        printf("5 add\n");
+        str_mm(len, len, hold, k, result);
+        printf("5 str\n");
+    }
+    else if (id == 6) {
+        sub(len, i, j, hold);
+        printf("6 sub\n");
+        add(len, k, l, hold2);
+        printf("6 add\n");
+        str_mm(len, len, hold, hold2, result);
+        printf("6 str\n");
+    }
+    else if (id == 7) {
+        sub(len, i, j, hold);
+        printf("7 sub\n");
+        add(len, k, l, hold2);
+        printf("7 add\n");
+        str_mm(len, len, hold, hold2, result);
+        printf("7 str\n");
+    }
+ 
+    printf("START FREE HOLD\n");
+    /*for (x = 0; x < len; x++) {
+        free(hold[x]);
+        free(hold2[x]);
+    }
+    free(hold);
+    free(hold2);*/
+
+    printf("Exiting thread #%d\n", id);
+    pthread_exit((void*) 0);
+}
+
+
+/*void *str_m1(void *threadarg) {
+    int len, x;
+    int **A11, **A22, **B11, **B22, **result, **hold, **hold2;
+    struct MMDATA *my_data;
+
+    //printf("In thread #%d\n", offset);
+    
+    my_data = (struct MMDATA *) threadarg;
+    len = my_data->len;
+    A11 = my_data->i;
+    A22 = my_data->j;
+    B11 = my_data->k;
+    B22 = my_data->l;
+    result = my_data->result;
+    
+    //A11 = malloc(sizeof(int*) * len);
+    //A22 = malloc(sizeof(int*) * len);
+    //B11 = malloc(sizeof(int*) * len);
+    //B22 = malloc(sizeof(int*) * len);
+    hold = malloc(sizeof(int*) * len);
+    hold2 = malloc(sizeof(int*) * len);
+
+    for(x = 0; x < len; x++) {
+        //A11[x] = malloc(sizeof(int) * len);
+        //A12[x] = malloc(sizeof(int) * len);
+        //A21[x] = malloc(sizeof(int) * len);
+        //A22[x] = malloc(sizeof(int) * len);
+        hold[x] = malloc(sizeof(int) * len);
+        hold2[x] = malloc(sizeof(int) * len);
     }
 
-    
-  
-    for (i = 0 + alt; i < l2 + alt; i++) {
-        for (j = 0; j < l1; j++) {
-            for (k = 0; k < l1; k++) {
-                result[i][j] += m[i][k] * n[k][j];
-            }
-        }
-    }
+    add(len, A11, A22, hold);
+    add(len, B11, B22, hold2);
+    str_mm(len, len, hold, hold2, result);
 
     //printf("Exiting thread #%d\n", offset);
     pthread_exit((void*) 0);
 }
 
+void *str_m6(void *threadarg) {
+    int len, x;
+    int **A21, **A11, **B11, **B12, **result, **hold, **hold2;
+    struct MMDATA *my_data;
+     
+    //printf("In thread #%d\n", offset);
+
+    my_data = (struct MMDATA *) threadarg;
+    len = my_data->len;
+    A21 = my_data->i;
+    A11 = my_data->j;
+    B11 = my_data->k;
+    B12 = my_data->l;
+    result = my_data->result;
+    
+    //A11 = malloc(sizeof(int*) * len);
+    //A22 = malloc(sizeof(int*) * len);
+    //B11 = malloc(sizeof(int*) * len);
+    //B22 = malloc(sizeof(int*) * len);
+    hold = malloc(sizeof(int*) * len);
+    hold2 = malloc(sizeof(int*) * len);
+
+    for(x = 0; x < len; x++) {
+        //A11[x] = malloc(sizeof(int) * len);
+        //A12[x] = malloc(sizeof(int) * len);
+        //A21[x] = malloc(sizeof(int) * len);
+        //A22[x] = malloc(sizeof(int) * len);
+        hold[x] = malloc(sizeof(int) * len);
+        hold2[x] = malloc(sizeof(int) * len);
+    }
+  
+    sub(len, A21, A11, hold);
+    add(len, B11, B12, hold2);
+    str_mm(len, len, hold, hold2, result);
+
+    //printf("Exiting thread #%d\n", offset);
+    pthread_exit((void*) 0);
+}
+
+void *str_m7(void *threadarg) {
+    int len, x;
+    int **A12, **A22, **B21, **B22, **result, **hold, **hold2;
+    struct MMDATA *my_data;
+    
+    //printf("In thread #%d\n", offset);
+
+    my_data = (struct MMDATA *) threadarg;
+    len = my_data->len;
+    A12 = my_data->i;
+    A22 = my_data->j;
+    B21 = my_data->k;
+    B22 = my_data->l;
+    result = my_data->result;
+     
+    //A11 = malloc(sizeof(int*) * len);
+    //A22 = malloc(sizeof(int*) * len);
+    //B11 = malloc(sizeof(int*) * len);
+    //B22 = malloc(sizeof(int*) * len);
+    hold = malloc(sizeof(int*) * len);
+    hold2 = malloc(sizeof(int*) * len);
+
+    for(x = 0; x < len; x++) {
+        //A11[x] = malloc(sizeof(int) * len);
+        //A12[x] = malloc(sizeof(int) * len);
+        //A21[x] = malloc(sizeof(int) * len);
+        //A22[x] = malloc(sizeof(int) * len);
+        hold[x] = malloc(sizeof(int) * len);
+        hold2[x] = malloc(sizeof(int) * len);
+    }
+  
+    sub(len, A12, A22, hold);
+    add(len, B21, B22, hold2);
+    str_mm(len, len, hold, hold2, result);
+
+    //printf("Exiting thread #%d\n", offset);
+    pthread_exit((void*) 0);
+}*/
+
+
+
 void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
 {
+    printf("I GOT HERE!");
+    fflush(stdout);
+
     if (wt <= THRESH) {
         /*int num_threads = 4;
         pthread_t threads[num_threads];
@@ -189,7 +375,7 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
         C21 = malloc(sizeof(int*) * len);
         C22 = malloc(sizeof(int*) * len);
 
-        int **m1, **m2, **m3, **m4, **m5, **m6, **m7, **hold, **hold2;
+        int **m1, **m2, **m3, **m4, **m5, **m6, **m7, **hold;
         m1 = malloc(sizeof(int*) * len);
         m2 = malloc(sizeof(int*) * len);
         m3 = malloc(sizeof(int*) * len);
@@ -198,7 +384,7 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
         m6 = malloc(sizeof(int*) * len);
         m7 = malloc(sizeof(int*) * len);
         hold = malloc(sizeof(int*) * len);
-        hold2 = malloc(sizeof(int*) * len);
+        //hold2 = malloc(sizeof(int*) * len);
     
         int x;
         for(x = 0; x < len; x++) {
@@ -220,7 +406,7 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
             m6[x] = malloc(sizeof(int) * len);
             m7[x] = malloc(sizeof(int) * len);
             hold[x] = malloc(sizeof(int) * len);
-            hold2[x] = malloc(sizeof(int) * len);
+            //hold2[x] = malloc(sizeof(int) * len);
 
             C11[x] = malloc(sizeof(int) * len);
             C12[x] = malloc(sizeof(int) * len);
@@ -249,15 +435,109 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
                 m6[i][j] = 0;
                 m7[i][j] = 0;
                 hold[i][j] = 0;
-                hold2[i][j] = 0;
+                //hold2[i][j] = 0;
             }
         }
+
+        printf("AFTER SPLIT");
 
         //timerv.split.end = clock();
         //timerv.split.total = (double)(timerv.split.end - timerv.split.start);
 
+        int num_threads = 7;
+        struct MMDATA multi_data[num_threads];
+        pthread_t threads[num_threads];
+        pthread_attr_t attr;
+        void *status;
+        int t;
+        //int hold_ht = THRESH/num_threads;
+
+        printf("IN FOR LOOP\n");
+
+        //Declare m1
+        multi_data[0].len = len;
+        multi_data[0].i = A11;
+        multi_data[0].j = A22;
+        multi_data[0].k = B11;
+        multi_data[0].l = B22;
+        multi_data[0].m_result = m1;
+
+        //Declare m2
+        multi_data[1].len = len;
+        multi_data[1].i = A21;
+        multi_data[1].j = A22;
+        multi_data[1].k = B11;
+        multi_data[1].l = hold;
+        multi_data[1].m_result = m2;
+
+        //Declare m3
+        multi_data[2].len = len;
+        multi_data[2].i = A11;
+        multi_data[2].j = B12;
+        multi_data[2].k = B22;
+        multi_data[2].l = hold;
+        multi_data[2].m_result = m3;
+
+        //Declare m4
+        multi_data[3].len = len;
+        multi_data[3].i = A22;
+        multi_data[3].j = B21;
+        multi_data[3].k = B11;
+        multi_data[3].l = hold;
+        multi_data[3].m_result = m4;
+
+        //Declare m5
+        multi_data[4].len = len;
+        multi_data[4].i = A11;
+        multi_data[4].j = A12;
+        multi_data[4].k = B22;
+        multi_data[4].l = hold;
+        multi_data[4].m_result = m5;
+
+        //Declare m6
+        multi_data[5].len = len;
+        multi_data[5].i = A21;
+        multi_data[5].j = A11;
+        multi_data[5].k = B11;
+        multi_data[5].l = B12;
+        multi_data[5].m_result = m6;
+
+        //Declare m7
+        multi_data[6].len = len;
+        multi_data[6].i = A12;
+        multi_data[6].j = A22;
+        multi_data[6].k = B21;
+        multi_data[6].l = B22;
+        multi_data[6].m_result = m7;
+
+        printf("AFTER DECLARE\n");
+
+        printf("\nmulti_data: %d\n", multi_data[0].i[0][0]);
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+        /*pthread_create(&threads[0], &attr, str_m1, (void *) &multi_data[0]);
+        pthread_create(&threads[1], &attr, str_m2, (void *) &multi_data[1]);
+        pthread_create(&threads[2], &attr, str_m3, (void *) &multi_data[2]);
+        pthread_create(&threads[3], &attr, str_m4, (void *) &multi_data[3]);
+        pthread_create(&threads[4], &attr, str_m5, (void *) &multi_data[4]);
+        pthread_create(&threads[5], &attr, str_m6, (void *) &multi_data[5]);
+        pthread_create(&threads[6], &attr, str_m7, (void *) &multi_data[6]);*/
+
+        for(t=0; t<num_threads; t++) {
+            printf("Creating thread %d\n", t);
+            multi_data[t].id = (t+1);
+            pthread_create(&threads[t], &attr, p_str, (void *) &multi_data[t]);
+        }
+
+        pthread_attr_destroy(&attr);
+
+        for(t=0; t<num_threads; t++) {
+            pthread_join(threads[t], &status);
+        }
+
         //Solving M's
-        add(len, A11, A22, hold);
+        /*add(len, A11, A22, hold);
         add(len, B11, B22, hold2);
         str_mm(len, len, hold, hold2, m1);
 
@@ -279,9 +559,10 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
 
         sub(len, A12, A22, hold);
         add(len, B21, B22, hold2);
-        str_mm(len, len, hold, hold2, m7);
+        str_mm(len, len, hold, hold2, m7);*/
         
         //Solving C's
+        printf("SOLVING C\n");
         add(len, m1, m4, C11);
         sub(len, C11, m5, C11);
         add(len, C11, m7, C11);
@@ -304,7 +585,7 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
             }
         }
 
-        for (i = 0; i < len; i++) {
+        /*for (i = 0; i < len; i++) {
             free(A11[i]);
             free(A12[i]);
             free(A21[i]);
@@ -322,7 +603,7 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
             free(m6[i]);
             free(m7[i]);
             free(hold[i]);
-            free(hold2[i]);
+            //free(hold2[i]);
 
             free(C11[i]);
             free(C12[i]);
@@ -346,18 +627,17 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
         free(m6);
         free(m7);
         free(hold);
-        free(hold2);
+        //free(hold2);
 
         free(C11);
         free(C12);
         free(C21);
-        free(C22);
+        free(C22);*/
     }
 }
 
 int * strassen_mm(int *m, int *n, int wt, int ht)
 {
-
     /*int m[] = {5,2,6,1,0,6,2,0,
                3,8,1,4,1,8,5,6,
                1,2,3,4,5,6,7,8,
@@ -388,7 +668,7 @@ int * strassen_mm(int *m, int *n, int wt, int ht)
     int * answer = (int *)malloc(sizeof(int) * (ht * wt));
 
     
-    int x;
+    int x,y;
     for(x = 0; x < ht; x++) {
         matrixm[x] = malloc(sizeof(int) * wt);
         matrixn[x] = malloc(sizeof(int) * wt);
@@ -396,33 +676,37 @@ int * strassen_mm(int *m, int *n, int wt, int ht)
     }
 
     //DELETE
-    int k,l;
     int count = 0;
-    for (k = 0; k <ht; k++) {
-        for (l = 0; l < wt; l++) {
-            matrixm[k][l] = m[count];
-            matrixn[k][l] = n[count];
-            result[k][l] = 0;
-            answer[count] = count;
+    for (x = 0; x < ht; x++) {
+        for (y = 0; y < wt; y++) {
+            matrixm[x][y] = m[count];
+            matrixn[x][y] = n[count];
+            result[x][y] = 0;
+            answer[count] = 0;
             count++;
         }
     }
 
+    printf("TEST\n");
+    printf("matrixm: %d\n", matrixm[0][1]);
+    printf("matrixn: %d\n", matrixn[0][1]);
+    printf("result: %d\n", result[0][1]);
+    printf("ht: %d\n", ht);
+    printf("wt: %d\n", wt);
     str_mm(ht, wt, matrixm, matrixn, result);
 
-    int i,j;
     int hold = 0;
-    for (i = 0; i < ht; i++) {
-         for (j = 0; j < wt; j++) {
-            answer[hold] = result[i][j];
+    for (x = 0; x < ht; x++) {
+         for (y = 0; y < wt; y++) {
+            answer[hold] = result[x][y];
             hold++;
         }
     }
 
-    for (i = 0; i < ht; i++) {
-        free(result[i]);
-        free(matrixm[i]);
-        free(matrixn[i]);
+    for (x = 0; x < ht; x++) {
+        free(result[x]);
+        free(matrixm[x]);
+        free(matrixn[x]);
     }
     free(result);
     free(matrixm);
@@ -438,5 +722,4 @@ int * strassen_mm(int *m, int *n, int wt, int ht)
 
     return answer;
 }
-
 
