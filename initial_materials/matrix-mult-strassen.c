@@ -33,7 +33,7 @@ int32_t *element(Matrix *mat, u_int16_t i, u_int16_t j) {
 
 void decompose(Matrix *mat, Matrix subs[2][2]) {
 
-  enter_func(FUNC_ID_DECOMPOSE);
+  //enter_func(FUNC_ID_DECOMPOSE);
 
   // Assume the matrix is square
   
@@ -54,12 +54,12 @@ void decompose(Matrix *mat, Matrix subs[2][2]) {
     }
   }
 
-  leave_func(FUNC_ID_DECOMPOSE);
+  //leave_func(FUNC_ID_DECOMPOSE);
 }
 
 void compose(Matrix subs[2][2], Matrix *mat) {
 
-  enter_func(FUNC_ID_COMPOSE);
+  //enter_func(FUNC_ID_COMPOSE);
   
   // Assume the matrix is square
   
@@ -76,7 +76,7 @@ void compose(Matrix subs[2][2], Matrix *mat) {
     }
   }
 
-  leave_func(FUNC_ID_COMPOSE);
+  //leave_func(FUNC_ID_COMPOSE);
 }
 
 void compute_m1(Matrix sub1[2][2], Matrix sub2[2][2], Matrix *m1, u_int16_t threshold) {
@@ -196,7 +196,7 @@ void compute_c22(Matrix m[7], Matrix *c22) {
 
 Matrix *add(Matrix *mat1, Matrix *mat2, Matrix *sum) {
 
-  enter_func(FUNC_ID_ADD);
+  //enter_func(FUNC_ID_ADD);
   
   // Check that both matrices have the same dimensions
   if (mat1->rows != mat2->rows || mat1->cols != mat2->cols) {
@@ -218,14 +218,14 @@ Matrix *add(Matrix *mat1, Matrix *mat2, Matrix *sum) {
     }
   }
 
-  leave_func(FUNC_ID_ADD);
+  //leave_func(FUNC_ID_ADD);
   
   return sum;
 }
 
 Matrix *subtract(Matrix *mat1, Matrix *mat2, Matrix *diff) {
 
-  enter_func(FUNC_ID_SUBTRACT);
+  //enter_func(FUNC_ID_SUBTRACT);
   
   // Check that both matrices have the same dimensions
   if (mat1->rows != mat2->rows || mat1->cols != mat2->cols) {
@@ -244,14 +244,14 @@ Matrix *subtract(Matrix *mat1, Matrix *mat2, Matrix *diff) {
     }
   }
 
-  leave_func(FUNC_ID_SUBTRACT);
+  //leave_func(FUNC_ID_SUBTRACT);
 
   return diff;
 }
 
 Matrix *multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t threshold) {
 
-  enter_func(FUNC_ID_MULTIPLY);
+  //enter_func(FUNC_ID_MULTIPLY);
   
   // Check that the matrices have the same inner dimension
   if (mat1->cols != mat2->rows) {
@@ -269,14 +269,14 @@ Matrix *multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t threshold) 
      strassen_multiply(mat1, mat2, prod, threshold);
   }
 
-  leave_func(FUNC_ID_MULTIPLY);
+  //leave_func(FUNC_ID_MULTIPLY);
   
   return prod;
 }
 
 Matrix *naive_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod) {
 
-  enter_func(FUNC_ID_NAIVE_MULTIPLY);
+  //enter_func(FUNC_ID_NAIVE_MULTIPLY);
   
   // Assume the matrices have the same inner dimension
 
@@ -292,26 +292,26 @@ Matrix *naive_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod) {
     }
   }
 
-  leave_func(FUNC_ID_NAIVE_MULTIPLY);
+  //leave_func(FUNC_ID_NAIVE_MULTIPLY);
   
   return prod;
 }
 
 Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t threshold) {
 
-  enter_func(FUNC_ID_STRASSEN_MULTIPLY);
+  //enter_func(FUNC_ID_STRASSEN_MULTIPLY);
   
   // Assume the matrices have the same inner dimension
 
   // Check that the matrices have even dimensions
   if (mat1->rows & 1 || mat1->cols & 1 || mat2->rows & 1 || mat2->cols & 1) {
-    leave_func(FUNC_ID_STRASSEN_MULTIPLY);
+    //leave_func(FUNC_ID_STRASSEN_MULTIPLY);
     return NULL; // TODO: fix this rather than quitting
   }
 
   // Check that the matrices are square
   if (mat1->rows != mat1->cols || mat2->rows != mat2->cols) {
-    leave_func(FUNC_ID_STRASSEN_MULTIPLY);
+    //leave_func(FUNC_ID_STRASSEN_MULTIPLY);
     return NULL; // TODO: fix this rather than quitting
   }
 
@@ -323,7 +323,7 @@ Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t th
 
   // Compute temporary matrices (M1, ..., M7)
   Matrix temp[7];
-  enter_func(FUNC_ID_COMPUTE_M);
+  //enter_func(FUNC_ID_COMPUTE_M);
   compute_m1(sub1, sub2, &temp[0], threshold);
   compute_m2(sub1, sub2, &temp[1], threshold);
   compute_m3(sub1, sub2, &temp[2], threshold);
@@ -331,16 +331,16 @@ Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t th
   compute_m5(sub1, sub2, &temp[4], threshold);
   compute_m6(sub1, sub2, &temp[5], threshold);
   compute_m7(sub1, sub2, &temp[6], threshold);
-  leave_func(FUNC_ID_COMPUTE_M);
+  //leave_func(FUNC_ID_COMPUTE_M);
   
   // Compute submatrices (C11, C12, C21, C22) and create product
   Matrix sub3[2][2];
-  enter_func(FUNC_ID_COMPUTE_C);
+  //enter_func(FUNC_ID_COMPUTE_C);
   compute_c11(temp, &sub3[0][0]);
   compute_c12(temp, &sub3[0][1]);
   compute_c21(temp, &sub3[1][0]);
   compute_c22(temp, &sub3[1][1]);
-  leave_func(FUNC_ID_COMPUTE_C);
+  //leave_func(FUNC_ID_COMPUTE_C);
   compose(sub3, prod);
 
   // Clean up
@@ -356,7 +356,7 @@ Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t th
     free(temp[i].data);
   }
 
-  leave_func(FUNC_ID_STRASSEN_MULTIPLY);
+  //leave_func(FUNC_ID_STRASSEN_MULTIPLY);
   
   return prod;
 }

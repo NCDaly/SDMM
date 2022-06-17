@@ -18,85 +18,125 @@
 #define FUNC_ID_STRASSEN_MULTIPLY 9
 */
 
-#define TASK_ID_M1 0
-#define TASK_ID_M2 1
-#define TASK_ID_M3 2
-#define TASK_ID_M4 3
-#define TASK_ID_M5 4
-#define TASK_ID_M6 5
-#define TASK_ID_M7 6
-#define TASK_ID_C11 7
-#define TASK_ID_C12 8
-#define TASK_ID_C21 9
-#define TASK_ID_C22 10
+u_int16_t strassen_threshold = DEFAULT_THRESHOLD;
+u_int16_t parallel_recursion = DEFAULT_RECURSION;
+
+int32_t thread_count = 0;
+pthread_mutex_t thread_count_mutex;
+pthread_attr_t thread_attributes;
+
+void create_pthread_tools(void) {
+
+  pthread_mutex_init(&thread_count_mutex, NULL);
+  pthread_attr_init(&thread_attributes);
+  pthread_attr_setdetachstate(&thread_attributes, PTHREAD_CREATE_JOINABLE);
+}
+
+void destroy_pthread_tools(void) {
+
+  pthread_mutex_destroy(&thread_count_mutex);
+  pthread_attr_destroy(&thread_attributes);
+}
+
+void set_strassen_threshold(u_int16_t value) {
+
+  strassen_threshold = value;
+}
+
+void set_parallel_recursion(u_int16_t value) {
+
+  parallel_recursion = value;
+}
 
 void *perform_task(void *task_ptr) {
 
   Task *task = (Task *) task_ptr;
+
+  //printf("%4hu Starting task %p (ID %hhu)...\n", task->size, task, task->id);
   switch (task->id) {
   case TASK_ID_M1:
-    compute_m1(task->a, task->b, &task->m[0], task->threshold);
+    compute_m1(task->a, task->b, &task->m[0]);
     break;
   case TASK_ID_M2:
-    compute_m2(task->a, task->b, &task->m[1], task->threshold);
+    compute_m2(task->a, task->b, &task->m[1]);
     break;
   case TASK_ID_M3:
-    compute_m3(task->a, task->b, &task->m[2], task->threshold);
+    compute_m3(task->a, task->b, &task->m[2]);
     break;
   case TASK_ID_M4:
-    compute_m4(task->a, task->b, &task->m[3], task->threshold);
+    compute_m4(task->a, task->b, &task->m[3]);
     break;
   case TASK_ID_M5:
-    compute_m5(task->a, task->b, &task->m[4], task->threshold);
+    compute_m5(task->a, task->b, &task->m[4]);
     break;
   case TASK_ID_M6:
-    compute_m6(task->a, task->b, &task->m[5], task->threshold);
+    compute_m6(task->a, task->b, &task->m[5]);
     break;
   case TASK_ID_M7:
-    compute_m7(task->a, task->b, &task->m[6], task->threshold);
+    compute_m7(task->a, task->b, &task->m[6]);
     break;
   case TASK_ID_C11:
-    compute_c11(task->m, &task->c[0]);
+    compute_c11(task->m, &task->c[_11]);
     break;
   case TASK_ID_C12:
-    compute_c11(task->m, &task->c[1]);
+    compute_c12(task->m, &task->c[_12]);
     break;
   case TASK_ID_C21:
-    compute_c11(task->m, &task->c[2]);
+    compute_c21(task->m, &task->c[_21]);
     break;
   case TASK_ID_C22:
-    compute_c22(task->m, &task->c[3]);
+    compute_c22(task->m, &task->c[_22]);
     break;
   default:
     break;
   }
 
-  free(task);
-  
+  // Update thread count
   pthread_mutex_lock(&thread_count_mutex);
-  thread_count--;
+  int32_t threads_avail = MAX_THREADS - thread_count--;
   pthread_mutex_unlock(&thread_count_mutex);
-  
+
+  //printf("%4hu Finished task %p (ID %hhu)... %d / %d threads available \n",
+  //       task->size, task, task->id, threads_avail, MAX_THREADS);
+  free(task);
+
   return NULL;
 }
 
-void assign_task(u_int8_t task_id, Task *task_info, pthread_t thread) {
+void assign_task(u_int8_t task_id, Task *task_info, pthread_t *thread) {
 
-  Task *task = malloc(sizeof Task);
+  // Create task struct, to be freed by the thread that uses it
+  Task *task = malloc(sizeof(Task));
+  task->size = task_info->size;
   task->id = task_id;
   task->a = task_info->a;
   task->b = task_info->b;
   task->c = task_info->c;
   task->m = task_info->m;
 
-  pthread_mutex_lock(&thread_count_mutex);
-  while (thread_count >= MAX_THREADS) {
-    pthread_cond_wait(&threads_available);
+  // Determine whether to create a new thread for this task
+  int32_t use_new_thread;
+  if (task->size < strassen_threshold << parallel_recursion) {
+    // Make sure there are available threads
+    pthread_mutex_lock(&thread_count_mutex);
+    use_new_thread = (thread_count < MAX_THREADS) ? 1 : 0;
+    thread_count += use_new_thread;
+    pthread_mutex_unlock(&thread_count_mutex);
+  } else {
+    // Always compute in series at higher layers
+    use_new_thread = 0;
   }
-  thread_count++;
-  pthread_mutex_unlock(&thread_count_mutex);
-  
-  pthread_create(thread, NULL, perform_task, (void *) task);
+
+  // Perform the task
+  if (use_new_thread) {
+    pthread_create(thread, &thread_attributes, perform_task, (void *) task);
+  } else {
+    *thread = 0;
+    pthread_mutex_lock(&thread_count_mutex);
+    thread_count++;
+    pthread_mutex_unlock(&thread_count_mutex);
+    perform_task((void *) task);
+  }
 }
 
 int32_t *element(Matrix *mat, u_int16_t i, u_int16_t j) {
@@ -163,86 +203,86 @@ void compose(Matrix subs[2][2], Matrix *mat) {
   //leave_func(FUNC_ID_COMPOSE);
 }
 
-void compute_m1(Matrix sub1[2][2], Matrix sub2[2][2], Matrix *m1, u_int16_t threshold) {
+void compute_m1(Matrix *sub1, Matrix *sub2, Matrix *m1) {
 
   Matrix temp1;
   Matrix temp2;
 
-  add(&sub1[0][0], &sub1[1][1], &temp1);
-  add(&sub2[0][0], &sub2[1][1], &temp2);
-  multiply(&temp1, &temp2, m1, threshold);
+  add(&sub1[_11], &sub1[_22], &temp1);
+  add(&sub2[_11], &sub2[_22], &temp2);
+  multiply(&temp1, &temp2, m1);
 
   free(temp1.data);
   free(temp2.data);
 }
 
-void compute_m2(Matrix sub1[2][2], Matrix sub2[2][2], Matrix *m2, u_int16_t threshold) {
+void compute_m2(Matrix *sub1, Matrix *sub2, Matrix *m2) {
 
   Matrix temp;
 
-  add(&sub1[1][0], &sub1[1][1], &temp);
-  multiply(&temp, &sub2[0][0], m2, threshold);
+  add(&sub1[_21], &sub1[_22], &temp);
+  multiply(&temp, &sub2[_11], m2);
 
   free(temp.data);
 }
 
-void compute_m3(Matrix sub1[2][2], Matrix sub2[2][2], Matrix *m3, u_int16_t threshold) {
+void compute_m3(Matrix *sub1, Matrix *sub2, Matrix *m3) {
 
   Matrix temp;
 
-  subtract(&sub2[0][1], &sub2[1][1], &temp);
-  multiply(&sub1[0][0], &temp, m3, threshold);
+  subtract(&sub2[_12], &sub2[_22], &temp);
+  multiply(&sub1[_11], &temp, m3);
 
   free(temp.data);
 }
 
-void compute_m4(Matrix sub1[2][2], Matrix sub2[2][2], Matrix *m4, u_int16_t threshold) {
+void compute_m4(Matrix *sub1, Matrix *sub2, Matrix *m4) {
 
   Matrix temp;
 
-  subtract(&sub2[1][0], &sub2[0][0], &temp);
-  multiply(&sub1[1][1], &temp, m4, threshold);
+  subtract(&sub2[_21], &sub2[_11], &temp);
+  multiply(&sub1[_22], &temp, m4);
 
   free(temp.data);
 }
 
-void compute_m5(Matrix sub1[2][2], Matrix sub2[2][2], Matrix *m5, u_int16_t threshold) {
+void compute_m5(Matrix *sub1, Matrix *sub2, Matrix *m5) {
 
   Matrix temp;
 
-  add(&sub1[0][0], &sub1[0][1], &temp);
-  multiply(&temp, &sub2[1][1], m5, threshold);
+  add(&sub1[_11], &sub1[_12], &temp);
+  multiply(&temp, &sub2[_22], m5);
 
   free(temp.data);
 }
 
-void compute_m6(Matrix sub1[2][2], Matrix sub2[2][2], Matrix *m6, u_int16_t threshold) {
+void compute_m6(Matrix *sub1, Matrix *sub2, Matrix *m6) {
 
   Matrix temp1;
   Matrix temp2;
 
-  subtract(&sub1[1][0], &sub1[0][0], &temp1);
-  add(&sub2[0][0], &sub2[0][1], &temp2);
-  multiply(&temp1, &temp2, m6, threshold);
+  subtract(&sub1[_21], &sub1[_11], &temp1);
+  add(&sub2[_11], &sub2[_12], &temp2);
+  multiply(&temp1, &temp2, m6);
 
   free(temp1.data);
   free(temp2.data);
 }
 
-void compute_m7(Matrix sub1[2][2], Matrix sub2[2][2], Matrix *m7, u_int16_t threshold) {
+void compute_m7(Matrix *sub1, Matrix *sub2, Matrix *m7) {
 
   Matrix temp1;
   Matrix temp2;
 
-  subtract(&sub1[0][1], &sub1[1][1], &temp1);
-  add(&sub2[1][0], &sub2[1][1], &temp2);
-  multiply(&temp1, &temp2, m7, threshold);
+  subtract(&sub1[_12], &sub1[_22], &temp1);
+  add(&sub2[_21], &sub2[_22], &temp2);
+  multiply(&temp1, &temp2, m7);
 
   free(temp1.data);
   free(temp2.data);
 }
 
-void compute_c11(Matrix m[7], Matrix *c11) {
+void compute_c11(Matrix *m, Matrix *c11) {
 
   Matrix temp1;
   Matrix temp2;
@@ -255,17 +295,17 @@ void compute_c11(Matrix m[7], Matrix *c11) {
   free(temp2.data);
 }
 
-void compute_c12(Matrix m[7], Matrix *c12) {
+void compute_c12(Matrix *m, Matrix *c12) {
 
   add(&m[2], &m[4], c12);
 }
 
-void compute_c21(Matrix m[7], Matrix *c21) {
+void compute_c21(Matrix *m, Matrix *c21) {
 
   add(&m[1], &m[3], c21);
 }
 
-void compute_c22(Matrix m[7], Matrix *c22) {
+void compute_c22(Matrix *m, Matrix *c22) {
 
   Matrix temp1;
   Matrix temp2;
@@ -291,9 +331,6 @@ Matrix *add(Matrix *mat1, Matrix *mat2, Matrix *sum) {
   sum->rows = mat1->rows;
   sum->cols = mat2->cols;
   sum->data = (int32_t *) calloc(sum->rows * sum->cols, sizeof(int32_t));
-  if (sum->data == NULL) {
-    return NULL;
-  }
   
   // Compute the sum
   for (u_int16_t i = 0; i < sum->rows; i++) {
@@ -333,7 +370,7 @@ Matrix *subtract(Matrix *mat1, Matrix *mat2, Matrix *diff) {
   return diff;
 }
 
-Matrix *multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t threshold) {
+Matrix *multiply(Matrix *mat1, Matrix *mat2, Matrix *prod) {
 
   //enter_func(FUNC_ID_MULTIPLY);
   
@@ -347,10 +384,10 @@ Matrix *multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t threshold) 
   prod->cols = mat2->cols;
 
   // Perform the appropriate multiplication algorithm
-  if (mat1->cols < threshold) {
+  if (mat1->cols < strassen_threshold) {
     naive_multiply(mat1, mat2, prod);
   } else {
-     strassen_multiply(mat1, mat2, prod, threshold);
+     strassen_multiply(mat1, mat2, prod);
   }
 
   //leave_func(FUNC_ID_MULTIPLY);
@@ -381,51 +418,81 @@ Matrix *naive_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod) {
   return prod;
 }
 
-Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t threshold) {
+Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod) {
 
-  //enter_func(FUNC_ID_STRASSEN_MULTIPLY);
   
   // Assume the matrices have the same inner dimension
 
   // Check that the matrices have even dimensions
   if (mat1->rows & 1 || mat1->cols & 1 || mat2->rows & 1 || mat2->cols & 1) {
-    //leave_func(FUNC_ID_STRASSEN_MULTIPLY);
     return NULL; // TODO: fix this rather than quitting
   }
 
   // Check that the matrices are square
   if (mat1->rows != mat1->cols || mat2->rows != mat2->cols) {
-    //leave_func(FUNC_ID_STRASSEN_MULTIPLY);
     return NULL; // TODO: fix this rather than quitting
   }
 
   // Split the matrices
   Matrix sub1[2][2];
   Matrix sub2[2][2];
+  Matrix sub3[2][2];
+  Matrix temp[7];
   decompose(mat1, sub1);
   decompose(mat2, sub2);
 
+  // Generic info to be passed to ALL threads
+  Task task_info;
+  task_info.size = mat1->rows;
+  task_info.a = (Matrix *) sub1;
+  task_info.b = (Matrix *) sub2;
+  task_info.c = (Matrix *) sub3;
+  task_info.m = (Matrix *) temp;
+
+  /* DANGER: passing the child threads pointers to the parent thread's stack!
+     Arguably OK because the threads will only ever read from these pointers,
+     never write to them, and because the function waits for all the child
+     threads to complete before returning. */
+
   // Compute temporary matrices (M1, ..., M7)
-  Matrix temp[7];
-  //enter_func(FUNC_ID_COMPUTE_M);
-  compute_m1(sub1, sub2, &temp[0], threshold);
-  compute_m2(sub1, sub2, &temp[1], threshold);
-  compute_m3(sub1, sub2, &temp[2], threshold);
-  compute_m4(sub1, sub2, &temp[3], threshold);
-  compute_m5(sub1, sub2, &temp[4], threshold);
-  compute_m6(sub1, sub2, &temp[5], threshold);
-  compute_m7(sub1, sub2, &temp[6], threshold);
-  //leave_func(FUNC_ID_COMPUTE_M);
+
+  // Assign six computations to the child threads
+  pthread_t threads[6] = {0};
+  for (u_int8_t i = 0; i < 6; i++) {
+    assign_task(TASK_ID_M2 + i, &task_info, &threads[i]);
+  }
+  
+  // Save the seventh computation for the parent thread
+  //printf("%4hu Starting task %p (ID 0)... (local)\n", task_info.size, &task_info);
+  compute_m1((Matrix *) sub1, (Matrix *) sub2, &temp[0]);
+  //printf("%4hu Finished task %p (ID 0)... (local)\n", task_info.size, &task_info);
+
+  // Wait for all threads to finish before continuing
+  
+  for (u_int8_t i = 0; i < 6; i++) {
+    if (threads[i] != 0) {
+      pthread_join(threads[i], NULL);
+    }
+  }
   
   // Compute submatrices (C11, C12, C21, C22) and create product
-  Matrix sub3[2][2];
-  //enter_func(FUNC_ID_COMPUTE_C);
-  compute_c11(temp, &sub3[0][0]);
-  compute_c12(temp, &sub3[0][1]);
-  compute_c21(temp, &sub3[1][0]);
+
+  // Assign three computations to the child threads
+  for (u_int8_t i = 0; i < 3; i++) {
+    assign_task(TASK_ID_C11 + i, &task_info, &threads[i]);
+  }
+
+  // Save the fourth computation for the parent thread
   compute_c22(temp, &sub3[1][1]);
-  leave_func(FUNC_ID_COMPUTE_C);
-  //compose(sub3, prod);
+
+  // Wait for all threads to finish before continuing
+  for (u_int8_t i = 0; i < 3; i++) {
+    if (threads[i] != 0) {
+      pthread_join(threads[i], NULL);
+    }
+  }
+
+  compose(sub3, prod);
 
   // Clean up
   for (u_int8_t i = 0; i < 2; i++) {
@@ -439,8 +506,6 @@ Matrix *strassen_multiply(Matrix *mat1, Matrix *mat2, Matrix *prod, u_int16_t th
   for (u_int8_t i = 0; i < 7; i++) {
     free(temp[i].data);
   }
-
-  //leave_func(FUNC_ID_STRASSEN_MULTIPLY);
   
   return prod;
 }
@@ -483,6 +548,8 @@ void destroy_matrix(Matrix *mat) {
 
 int main(int argc, char **argv) {
 
+  create_pthread_tools();
+  
   printf("Matrix A:\n");
   Matrix *mat1 = input_matrix();
 
@@ -491,9 +558,11 @@ int main(int argc, char **argv) {
 
   printf("Product AB:\n");
   Matrix *prod = (Matrix *) malloc(sizeof(Matrix));
-  multiply(mat1, mat2, prod, DEFAULT_THRESHOLD);
+  multiply(mat1, mat2, prod);
 
   print_matrix(prod);
+
+  destroy_pthread_tools();
 
   destroy_matrix(mat1);
   destroy_matrix(mat2);

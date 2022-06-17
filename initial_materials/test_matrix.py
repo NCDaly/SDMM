@@ -141,13 +141,13 @@ def unpack(cMat):
             pyMat[i][j] = cMat.contents.data[i * cols + j]
     return pyMat
 
-def callMultiply(mat1, mat2, threshold=0):
+def callMultiply(mat1, mat2):
 
     ''' Takes two matrices in their Python representation. 
     Converts them to C and calls the C multiply function,
     then returns the product in its Python representation. '''
 
-    return unpack(cMult(pack(mat1), pack(mat2), pointer(MATRIX()), threshold))
+    return unpack(cMult(pack(mat1), pack(mat2), pointer(MATRIX())))
 
 def callAdd(mat1, mat2):
     
@@ -187,6 +187,7 @@ def generateMatrix(rows, cols):
                             
 def testRandomMatrices():
 
+    '''
     libmat.setup_func(0, b"main/multiply")
     libmat.setup_func(1, b"element")
     libmat.setup_func(2, b"decompose")
@@ -197,11 +198,12 @@ def testRandomMatrices():
     libmat.setup_func(7, b"subtract")
     libmat.setup_func(8, b"naive_multiply")
     libmat.setup_func(9, b"strassen_multiply")
-
+    '''
+    
     #rows = random.randint(1, MAX_SIZE)
     #cols = random.randint(1, MAX_SIZE)
     #diag = random.randint(1, MAX_SIZE)
-    rows = cols = diag = 1 << random.randint(3, 10)
+    rows = cols = diag = 1 << random.randint(1, 10)
 
     print(f"Generating matrices... ({rows} x {diag}) and ({diag} x {cols})")
     
@@ -224,28 +226,36 @@ def testRandomMatrices():
     dataX = []
     dataY = []
     dataXY = {}
+
+    markers = ["r+", "ro", "go", "bo"]
+    for recursion in range(4):
+        libmat.set_parallel_recursion(recursion)
+        dataX = []
+        dataY = []
+        for threshold in [16 << i for i in range(8)]:
+            #libmat.reset_stats()
+            libmat.set_strassen_threshold(threshold);
+            time0 = time.time()
+            cProd = callMultiply(mat1, mat2)
+            time1 = time.time()
+            dataX.append(f"{threshold}")
+            dataY.append(time1 - time0)
+            dataXY[threshold] = time1 - time0
+            result = "PASS" if cProd == pyProd else "FAIL"
+            print(f" P{recursion} T{threshold:<4} {result} {time1 - time0} seconds")
+        #print("***")
+        #for funcID in range(10):
+        #    libmat.print_stats(funcID)
+        #print("***")
+        #print()
     
-    for threshold in [16 << i for i in range(8)]:
-        libmat.reset_stats()
-        time0 = time.time()
-        cProd = callMultiply(mat1, mat2, threshold)
-        time1 = time.time()
-        dataX.append(f"{threshold}")
-        dataY.append(time1 - time0)
-        dataXY[threshold] = time1 - time0
-        result = "PASS" if cProd == pyProd else "FAIL"
-        print(f" {threshold:4} {result} {time1 - time0} seconds")
-        print("***")
-        for funcID in range(10):
-            libmat.print_stats(funcID)
-        print("***")
         print()
-    
-    print()
-    pyplot.plot(dataX, dataY)
+        pyplot.plot(dataX, dataY, label=f"{recursion}-layer parallelism")
+        
     pyplot.xlabel("Minimum size for Strassen")
     pyplot.ylabel("Runtime (s)")
     pyplot.title(f"Multiplying two {rows} x {cols} matrices")
+    pyplot.legend()
     pyplot.show()
 
 # Change return type of the C multiply function!
@@ -257,5 +267,7 @@ libmat.add.restype = POINTER(MATRIX)
 if __name__ == '__main__':
 
     #unittest.main()
+    libmat.create_pthread_tools()
     for i in range(int(input("Number of tests: "))):
         testRandomMatrices()
+    libmat.destroy_pthread_tools()

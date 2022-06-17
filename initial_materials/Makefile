@@ -1,16 +1,16 @@
 CC = gcc
 FLAGS = -g -fPIC -pthread
-SOURCE = matrix-mult-strassen
+SOURCE = matrix-mult-pthread
 STATS = function-stats
 FNAME = mmult
 TESTER = test_mult.py
 
 all: $(FNAME) $(FNAME).so
 
-$(FNAME): $(FNAME).o $(STATS).o
+$(FNAME): $(FNAME).o #$(STATS).o
 	$(CC) $(FLAGS) -o $@ $^
 
-$(FNAME).so: $(FNAME).o $(STATS).o
+$(FNAME).so: $(FNAME).o #$(STATS).o
 	$(CC) $(FLAGS) -o $@ $^ -shared
 
 $(FNAME).o: $(SOURCE).c $(SOURCE).h
