@@ -1,0 +1,206 @@
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <title>SHMEM - Lesson 1: SHMEM GET</title>
+    <link rel="stylesheet" type="text/css" href="arduino.css">
+    <script src="arduino.js" language="javascript" type="text/javascript"></script>
+  </head>
+
+<body>
+  <img style="width:100%;" alt="SHMEMmer Wanna Be"
+    src="banner1.png"><br>
+<h1>My Journey To Understanding and Using SHMEM:</h1>
+
+<h2>Lesson 1: shmem_get</h2>
+
+<i>Scenario:</i> Suppose you and your neighbor Alice are pretty good friends, good enough friends to 
+share tools. Your new home project, putting together a table, requires you to use a hammer,
+which so happens to be at Alice's. You run over to her house and knock on the door. Alice, 
+however, is just finishing up doing the dishes and is not able to come to the door right away.
+So, you wait. A few minutes later, she shows up and finds out what you need and grabs it for you.
+You then run back to your home and are able to finish the project.
+<br><br> 
+In the programming world, the waiting game can really put a damper on accessing data. Similar to
+the above scenario, there are some situations that call for splitting the data up between 
+multiple processors rather than each having all of the data. In these scenarios, it would be
+nice to just have access to the data being stored on other PEs and grab it when necessary
+(and do so without asking). And this is what SHMEM allows you to do and does so beautifully.
+BUT, with such freedom comes much responsibility on the programmer.
+<br><br>
+The ability to grab data from another processor's memory without asking is one instance
+where openMPI and SHMEM differ.
+<br><br>
+We will cover two basic get commands:
+<ol>
+	<li> grabbing only one element</li>
+	<li> grabbing an array of elements</li>
+</ol>
+
+To grab one element, we can use the following command:<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<b>TYPE shmem_&lt;TYPENAME&gt;_g(const TYPE *source, int pe);</b><br>
+where TYPE is one of the following: 
+<center>
+<table class="chart"><tbody>
+	<tr>
+		<th>TYPE</th>
+		<th>TYPENAME</th>
+	<tr>
+		<td>short</td>
+		<td>short</td>
+	</tr>
+	<tr>
+		<td>int</td> 
+		<td>int</td>
+	</tr>
+	<tr>
+		<td>long</td> 
+		<td>long</td>
+	</tr>
+	<tr>
+		<td>long long</td> 
+		<td>longlong</td>
+	</tr>
+	<tr>
+		<td>unsigned short</td> 
+		<td>ushort</td>
+	</tr>
+	<tr>
+		<td>unsigned int</td> 
+		<td>uint</td>
+	</tr>	
+	<tr>
+		<td>unsigned long</td> 
+		<td>ulong</td>
+	</tr>	
+	<tr>
+		<td>unsigned long long</td> 
+		<td>ulonglong</td>
+	</tr>	
+	<tr>
+		<td>int32_t</td> 
+		<td>int32</td>
+	</tr>	
+	<tr>
+		<td>int64_t</td> 
+		<td>int64</td>
+	</tr>	
+	<tr>
+		<td>uint32_t</td> 
+		<td>uint32</td>
+	</tr>	
+	<tr>
+		<td>uint64_t</td> 
+		<td>uint64</td>
+	</tr>	
+	<tr>
+		<td>size_t</td> 
+		<td>size</td>
+	</tr>	
+	<tr>
+		<td>ptrdiff_t</td> 
+		<td>ptrdiff</td>
+	</tr>	
+</tbody></table></center>
+<br><br>
+Notice that this command actually returns the item itself; whereas when it comes to grabbing an array,
+we will have to pass in the pointer to the location of the destination.
+
+<br><br>
+<table class="code"><tbody><tr><td>
+<pre>
+//grab_data_ex0.c
+
+#include &lt;stdio.h&gt;
+#include &lt;shmem.h&gt;
+
+int main(){
+	int my_pe, num_pe;  //declare variables for both pe id of processor and the number of pes
+	
+	shmem_init();
+	num_pe = shmem_n_pes();     //obtain the number of pes that can be used
+	my_pe  = shmem_my_pe();     //obtain the pe id number
+
+	int pe_source = 0;          //pe where the desirable data is residing
+	
+	static double source = 1;
+	double target;              //element to be filled
+	
+	//if not main node, grab data from the main node
+	if (my_pe != 0){
+		target = shmem_double_g(&source, pe_source);
+	}
+	printf("%d: Data at target is %f\n", my_pe, target);	
+	shmem_finalize();
+	return 0;
+}</pre>  
+</td></tr></tbody></table>
+<br><br>
+
+To compile: <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>oshcc grab_data_ex0.c -o grab_data_ex0</i><br>
+To run:  <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>oshrun -np 10 grab_data_ex0</i><br>
+	
+<br><br>	
+Unlike lesson 0, we are not going to go through the code line by line, but we will just 
+look at the middle portion: Let's first look at the SHMEM command
+	<ul><li><b>shmem_double_g</b> takes 2 arguments: </li>
+	<ul>
+		<li> the pointer to source</li>
+		<li> the pe where the source is located</li>
+	</ul>	
+	This command in addition to the condition statement <i>if (my_pe != 0)</i> 
+	simply makes every pe not equal to the pe_source copy the data (source) into their
+	local target variable (pe_source)
+	</ul>
+<br><br>
+To grab an array of elements, we can use one of the two following commands:
+<ul>
+	<li><b>shmem_&lt;TYPENAME&gt;_get(TYPE *dest, const TYPE *source, size_t nelems, int pe);</b></li>
+	<li><b>shmem_get&lt;SIZE&gt;(void *dest, const void *source, size_t nelems, int pe)</b></li>
+</ul>
+where the former can only be used with your basic C types listed in the above table. 
+
+<br><br>
+<table class="code"><tbody><tr><td>
+<pre>
+//grab_data_ex1.c
+
+#include <stdio.h>
+#include <shmem.h>
+
+int main(){
+	int my_pe, num_pe;          //declare variables for both pe id of processor and the number of pes
+	
+	shmem_init();
+	num_pe = shmem_n_pes();     //obtain the number of pes that can be used
+	my_pe  = shmem_my_pe();     //obtain the pe id number
+
+	int pe_source = 0;          //pe where the desirable data is residing
+	
+	static double source[10] = {1,2,3,4,5,6,7,8,9,10};
+	double target[10];          //array to be filled
+	
+	//if not main node, grab data from the main node
+	if (my_pe != 0){
+		shmem_double_get(target, source, 10, pe_source);
+	}
+	printf("%d: Data at target[0] is %f\n", my_pe, target[0]);	
+	shmem_finalize();
+	return 0;
+}</pre>  
+</td></tr></tbody></table>
+
+<br><br>
+To compile: <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>oshcc grab_data_ex1.c -o grab_data_ex1</i><br>
+To run:  <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>oshrun -np 10 grab_data_ex1</i><br>
+
+<br><br>	
+Now, lets look at a brief comparison of OpenMPI and SHMEM in this regard:
+
+TODO
+
+</body>    
+</html>

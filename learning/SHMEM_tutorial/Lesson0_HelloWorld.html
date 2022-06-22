@@ -1,0 +1,100 @@
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <title>SHMEM - Lesson 0: Hello World</title>
+    <link rel="stylesheet" type="text/css" href="arduino.css">
+    <script src="arduino.js" language="javascript" type="text/javascript"></script>
+  </head>
+
+<body>
+  <img style="width:100%;" alt="SHMEMmer Wanna Be"
+    src="banner1.png"><br>
+
+<h1>My Journey To Understanding and Using SHMEM:</h1>
+
+<h2>Lesson 0: Hello World</h2>
+If you are like me, you have heard about SHMEM and its benefits over MPI; however, you 
+struggled finding the means to really dive in and learn. In addition, it isn't like you have
+an HPC computer at home to just program in your spare time. So, how is one to learn the 
+gist of SHMEM to even conclude you want to try it or learn it to the extent it 
+will prove useful at work.
+<br>
+<br>
+I invite you to join me in the adventure of learning SHMEM. I should preface this tutorial with
+the following: this tutorial is by no means an all inclusive summary of SHMEM. There is much to 
+learn and the <a href=http://openshmem.org/site/sites/default/site_files/OpenSHMEM-1.4.pdf>documentation</a>
+is quite beneficial.
+<br>
+<br>
+As all good programming instructions begin, we will begin with the 
+treasured program "HelloWorld". 
+<br>
+<br>
+<table class="code"><tbody><tr><td>
+<pre>
+//HelloWorld.c
+
+#include &ltstdio.h&gt
+#include &ltshmem.h&gt
+
+int main(){
+	int my_pe, num_pe;         //declare variables for both pe id of processor and the number of pes
+	
+	shmem_init();
+	num_pe = shmem_n_pes();    //obtain the number of pes that can be used
+	my_pe  = shmem_my_pe();    //obtain the pe id number
+	
+	printf("Hello from %d of %d\n", my_pe, num_pe);
+	shmem_finalize();
+	return 0;
+}</pre>  
+</td></tr></tbody></table>
+
+<br>
+If you are new to HPCs, I will be the first to say that thinking in parallel is difficult; 
+however, it does get easier as you do it. So, lets look at this step by step for the time 
+being.
+<br>
+<br>
+What does each step of the above do?
+<ol>
+	<li> #include &lt stdio.h &gt  -- including the standard io c library</li>
+	<li> #include &lt <b>shmem.h</b> &gt  -- including the header file for SHMEM; allows us to use the SHMEM commands</li>
+	<li> int my_pe, num_pe  -- declaring variables of type int for both the processor id and number of processors</li>
+	<li> <b>shmem_init()</b>   -- initializes SHMEM</li>
+	<li> num_pe = <b>shmem_n_pes()</b>  -- obtain the number of pes that can be used</li>
+	<li> my_pe = <b>shmem_my_pe()</b>      -- obtain the id of pe </li>
+	<ul>
+		</li>The variable my_pe may not make sense initially. For example, say there are 10 servers <br>
+		that you can use. Each one of these servers will be given a unique id (0-9). This unique id <br>
+		allows you to control the pes individually -- they can be programmed to do different functions!</li>
+	</ul>
+	<li> <b>shmem_finalize()</b>   -- releases the SHMEM resources; the proverbial final curtain to SHMEM commands </li>
+</ol>
+<br>
+To compile the above code, we use the openshmem cc (oshcc) compiler wrapper:<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>oshcc HelloWorld.c -o HelloWorld</i> 
+<br>
+<br>	
+To read more about compilation, look at <a href=http://openshmem.org/site/sites/default/site_files/OpenSHMEM-1.4.pdf>Annex B</a>.
+<br>
+<br>
+To run your treasured code, SHMEM was kind enough to provide the wrapper, oshrun:<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>oshrun -np 10 HelloWorld</i>
+<br>
+where 10 is the number of processors we want to use.
+<br>
+<br>
+The output should be:
+<table class="code"><tbody><tr><td>
+<pre>
+Hello from 0 of 10
+Hello from 1 of 10
+Hello from 2 of 10
+...
+Hello from 9 of 10
+</pre>  
+</td></tr></tbody></table>
+
+</body>    
+</html>

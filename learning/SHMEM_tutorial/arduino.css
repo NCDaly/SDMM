@@ -1,0 +1,154 @@
+@font-face {
+	font-family: my_akrobat;
+	src: url("./fonts/akrobat/akrobat-black.otf") format("opentype");
+}
+body, h1, h2 {
+
+	font-family: Sans-serif;
+
+	font-weight: normal;
+
+}
+
+h2 {
+  padding-top: 30px;
+  color: #D4e05E;
+}
+.home:link {
+  color: #ffffff;
+}
+
+.home:visited {
+   color: #fbcc44;
+}
+
+.homepage {
+  background-color:#19517B;
+  }
+
+h1 {
+    font-family: my_akrobat;
+	font-size: 45px;
+	color: #D4e05A;
+}
+
+#left_toc_margin {
+  width: 201px;
+}
+
+#right_toc_margin {
+  width: 201px;
+}
+
+.footnote {
+  font-size: x-small;
+}
+
+.info {
+  text-align: left;
+  border: 1px solid black;
+  cellpadding: 2;
+  cellspacing: 2;
+  background-color:#eeeeee;
+}	  
+
+.info_title {
+  text-align: left;
+  border-bottom: 1px solid black;
+  cellpadding: 2;
+  cellspacing: 2;
+  background-color:#dddddd;
+}	  
+	
+.check {
+  text-align: left;
+  width: 100%;
+  border: 0;
+  cellpadding: 2;
+  cellspacing; 2;
+  background-color: #ffbbbb;
+}
+
+.show {
+  text-align: left;
+  border: 1px solid black;
+  cellpadding: 2;
+  cellspacing: 2;
+  background-color:#99ead4;
+}	  
+	
+.code {
+  border: 1px solid black;
+  border-spacing: 20px;
+  cellpadding: 2;
+  cellspacing: 2;
+  background-color:#ffffff;
+  border-collapse: collapse;
+
+}	  
+	  
+/* The tooltip itself is bold */
+
+span.tooltip {
+
+	font-weight: bold;
+
+}
+
+
+
+/* A <span> inside a tooltip is invisible unless you hover */
+
+.tooltip span {
+
+  display:none;
+
+  z-index:10;
+
+  padding:14px 20px;
+
+  margin-top:-30px;
+
+  margin-left:28px;
+
+  width:300px;
+
+  line-height:16px;
+
+}
+
+
+
+.tooltip:hover span{
+
+  display:inline;
+
+  position:absolute;
+
+  color:#111;
+
+  border:1px solid #DCA; background:#fffAF0;
+
+}
+
+  
+
+.callout {
+
+		z-index:20;
+
+		position:absolute;
+
+		top:30px;border:
+
+		0;left:-12px;
+
+}
+
+.chart, th, td {
+	width: 50%;
+	border: 1px solid;
+	border-collapse: collapse;
+}
+
+

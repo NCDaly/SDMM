@@ -1,0 +1,259 @@
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <title>SHMEM - Lesson 2: SHMEM PUT</title>
+    <link rel="stylesheet" type="text/css" href="arduino.css">
+    <script src="arduino.js" language="javascript" type="text/javascript"></script>
+  </head>
+
+<body>
+  <img style="width:100%;" alt="SHMEMmer Wanna Be"
+    src="banner1.png"><br>
+<h1>My Journey To Understanding and Using SHMEM:</h1>
+
+<h2>Lesson 2: shmem_put</h2>
+
+Ok. So we now have a way to grab data from another pe. But, we need a way to put data
+onto other pes. And one question pops out in my mind: can we do so without shaking hands prior? 
+<br><br>
+Similar to shmem_get, the put command allows a pe to put data onto other pes without 
+receiving permission. BUT, with much freedom comes much responsibility ... We must be
+careful that we don't overwrite data that is needed - in other words, we need to avoid
+race conditions, and this is where you and I come in as programmers.
+<br><br>
+Today, we are only going to cover three of the basic put commands:
+<ol>
+	<li> copying only one element onto another pe</li>
+	<li> copying an array of elements onto another pe</li>
+	<li> copying strided data onto another pe</li>
+</ol>
+
+<h3>---Copying only one element onto another pe---</h3>
+To do so, we use the following command:<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; <b> void shmem_&lt;TYPENAME&gt;_p(TYPE *dest, TYPE value, int pe); </b><br>
+<ul>
+	<li> arg0 - *dest: a pointer to an element; this element must be allocated in the shared memory 
+	space of each PE.</li>
+	<li> arg1 - value: the value to be placed at *dest; can be either locally or globally defined memory</li>
+	<li> arg2 - pe: the PE on which the value is to be placed.</li>
+	<li> returns - none</li>
+</ul>
+If you remember from lesson 1, the get command is very similar except in this case nothing 
+is returned. In addition, the types allowed are the same:
+<center>
+<table class="chart"><tbody>
+	<tr>
+		<th>TYPE</th>
+		<th>TYPENAME</th>
+	<tr>
+		<td>short</td>
+		<td>short</td>
+	</tr>
+	<tr>
+		<td>int</td> 
+		<td>int</td>
+	</tr>
+	<tr>
+		<td>long</td> 
+		<td>long</td>
+	</tr>
+	<tr>
+		<td>long long</td> 
+		<td>longlong</td>
+	</tr>
+	<tr>
+		<td>unsigned short</td> 
+		<td>ushort</td>
+	</tr>
+	<tr>
+		<td>unsigned int</td> 
+		<td>uint</td>
+	</tr>	
+	<tr>
+		<td>unsigned long</td> 
+		<td>ulong</td>
+	</tr>	
+	<tr>
+		<td>unsigned long long</td> 
+		<td>ulonglong</td>
+	</tr>	
+	<tr>
+		<td>int32_t</td> 
+		<td>int32</td>
+	</tr>	
+	<tr>
+		<td>int64_t</td> 
+		<td>int64</td>
+	</tr>	
+	<tr>
+		<td>uint32_t</td> 
+		<td>uint32</td>
+	</tr>	
+	<tr>
+		<td>uint64_t</td> 
+		<td>uint64</td>
+	</tr>	
+	<tr>
+		<td>size_t</td> 
+		<td>size</td>
+	</tr>	
+	<tr>
+		<td>ptrdiff_t</td> 
+		<td>ptrdiff</td>
+	</tr>	
+</tbody></table></center>
+<br><br>
+
+
+<table class="code"><tbody><tr><td>
+<pre>
+//put_data_ex0.c
+
+#include &lt;stdio.h&gt;
+#include &lt;shmem.h&gt;
+
+int main(){
+	int my_pe, num_pe;          //declare variables for both pe id of processor and the number of pes
+	
+	shmem_init();
+	num_pe = shmem_n_pes();     //obtain the number of pes that can be used
+	my_pe  = shmem_my_pe();     //obtain the pe id number
+
+	int pe_source = 0;          //pe where the desired data is residing
+	int pe_dest   = 1;
+	
+	double source = 1;
+	static double dest;         //variable to be filled
+	
+	//if main node, put data onto destination node
+	if (my_pe == pe_source){
+		shmem_double_p(&dest, source, pe_dest);
+	}
+	shmem_barrier_all();
+	if (my_pe == pe_dest){
+		printf("%d: Data at dest is now %f\n", my_pe, dest);	
+	}
+	shmem_finalize();
+	return 0;
+}</pre>  
+</td></tr></tbody></table>
+<br><br>
+To compile: <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshcc put_data_ex0.c -o put_data_ex0</i><br>
+To run:  <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshrun -np 10 put_data_ex0</i>
+
+<br><br>	
+Lets first take a look at the code
+<pre>
+	if (my_pe == pe_source){
+		shmem_double_p(&dest, source, pe_dest);
+	}	
+</pre>
+
+Note that PE 1 skips this command and would just go on to the next. So, what would happen
+then if the next command was to print the data? Do you think the correct data would be 
+there yet? Unless PE 1 is super lazy and moving ultra slow, the answer is no. The data it 
+would print would be the data from of old. Haha. I just imagine an assembly line in a 
+cartoon with Tom and Jerry. Tom (the cat) would just be redoing his work over and over
+again --- Jerry in this instance would probably be slow just to spite Tom.
+<br><br>
+So, how do we ensure that PE 1 (or Tom) has the correct piece? This is where a sync comes 
+into play. In the above, I used the most basic: <b>shmem_barrier_all()</b>, which makes
+all the PEs stop until both the local and remote data are in their proper locations. But, 
+you are probably already asking as I was, "wait. What about the scenario where you only 
+want to wait for a certain PE's data to finish moving? Or what if you don't care if all of
+the data is in the correct location before moving on?" Well, thankfully, there are commands
+that cover these scenarios and more. The <a href="Lesson3_barriers.html">next lesson</a> will 
+go into more detail on these.
+
+
+<h3>---Copying an array of elements onto another pe---</h3>
+I don't know about you, but memorization is not my forte. And my short term memory is 
+very similar to Dory's from Finding Nemo. But, this is where I am super thankful for
+understandable commands and similar commands!!!!!!
+<br><br>
+Think back to the last lesson where we learned shmem_g and shmem_get. Notice that for only 
+one element, there is only one single letter "g"; whereas for the grabbing an array of elements
+we use the whole word "get". Well, thankfully, we are in a similar situation. To put an array 
+of elements onto another pe, the whole word "put" is used and the arguments are identical
+to that of the "get" command.
+<br><br>
+To put an array of elements onto another pe, we can use one of the two following commands:
+<ul>
+	<li><b>shmem_&lt;TYPENAME&gt;_put(TYPE *dest, const TYPE *source, size_t nelems, int pe);</b></li>
+	<ul>
+		<li> arg0 - *dest: a pointer to an array of elements; this array must be allocated in the shared memory 
+		space of each PE.</li>
+		<li> arg1 - *source: the pointer to an array of values to be placed at *dest; can be either locally or globally defined memory</li>
+		<li> arg2 - nelems: the number of elements in the array.</li>
+		<li> arg3 - pe: the PE on which the value is to be placed.</li>
+		<li> returns - none</li>
+	</ul>
+	<li><b>shmem_put&lt;SIZE&gt;(void *dest, const void *source, size_t nelems, int pe)</b></li>
+	<ul>
+		<li> SIZE: number of <b><i>bits</i></b></li>
+		<li> arg0 - *dest: a pointer to an array of elements; this array must be allocated in the shared memory 
+		space of each PE.</li>
+		<li> arg1 - *source: the pointer to an array of values to be placed at *dest; can be either locally or globally defined memory</li>
+		<li> arg2 - nelems: the number of elements in the array.</li>
+		<li> arg3 - pe: the PE on which the value is to be placed.</li>
+		<li> returns - none</li>
+	</ul>
+</ul>
+where the former can only be used with your basic C types. Now, some of you may be fortunate (I
+currently am not) and can use the simple version <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<b>shmem_put(TYPE *dest, const TYPE *source, size_t nelems, int pe)</b></br>
+To be able to use the above, you need a C11 compiler. In that case, you can use the shortened version
+of all of the commands (just eliminate the TYPENAME or SIZE).
+	
+<br><br>
+<table class="code"><tbody><tr><td>
+<pre>
+//put_data_ex1.c
+
+#include &lt;stdio.h&gt;
+#include &lt;shmem.h&gt;
+
+int main(){
+	int my_pe, num_pe;          //declare variables for both pe id of processor and the number of pes
+	
+	shmem_init();
+	num_pe = shmem_n_pes();     //obtain the number of pes that can be used
+	my_pe  = shmem_my_pe();     //obtain the pe id number
+
+	int pe_source = 0;          //pe where the desired data is residing
+	int pe_dest   = 1;
+	
+	double source[10] = {1,2,3,4,5,6,7,8,9,10};
+	static double dest[10];     //array to be filled
+	
+	//if main node, put data onto destination node
+	if (my_pe == pe_source){
+		shmem_double_put(dest, source, 10, pe_dest);
+	}
+	shmem_barrier_all();
+	if (my_pe == pe_dest){
+		printf("%d: Data at dest is now ", my_pe);
+		for (int i=0; i&lt;10; i++)
+			printf(" %d," dest[i]);	
+		printf("\n");
+	}
+	shmem_finalize();
+	return 0;
+}</pre>  
+</td></tr></tbody></table>
+
+<br><br>
+To compile: <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshcc put_data_ex1.c -o put_data_ex1</i><br>
+To run:  <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshrun -np 10 put_data_ex1</i>
+
+
+<h3>---Copying strided data onto another pe---</h3>
+
+TODO
+
+</body>    
+</html>
