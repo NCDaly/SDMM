@@ -166,10 +166,15 @@ def selfMultiply(mat1, mat2):
     diag = len(mat1[0])
     cols = len(mat2[0])
     prod = [[0 for j in range(cols)] for i in range(rows)]
+    total = rows * cols
+    cells = 0
+    print(f"[{' ' * 50}] 0%")
     for i in range(rows):
         for j in range(cols):
             for k in range(diag):
                 prod[i][j] += mat1[i][k] * mat2[k][j]
+            cells += 1
+            print(f"\u001b[1A[{'=' * (50 * cells // total):<50}] {100 * cells // total}%")
     return prod
 
 def generateMatrix(rows, cols):
