@@ -3,10 +3,12 @@ from ctypes import c_int
 from numpy.ctypeslib import ndpointer
 import numpy as np
 
-so_file = "/home/bailey/Documents/Summer22/sdmm-22/code/strassen_parallel2.so"
+so_file = "/home/bailey/Documents/Summer22/sdmm-22/code/strassen_parallel.so"
+so_file2 = "/home/bailey/Documents/Summer22/sdmm-22/code/strassen_parallel2.so"
 
-wt = 32
-ht = 32
+thresh = 128
+wt = 1024
+ht = 1024
   
 m = np.random.randint(2, size=(wt*ht))
 n = np.random.randint(2, size=(wt*ht))
@@ -54,7 +56,7 @@ print(n)
 
 
 trial = ctypes.CDLL(so_file)
-trial.strassen_mm.argtypes = (ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int)
+trial.strassen_mm.argtypes = (ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.c_int, ctypes.c_int, ctypes.c_int)
 trial.strassen_mm.restype = ndpointer(dtype=c_int, shape=(ht,wt))
 
 
@@ -64,10 +66,21 @@ trial.strassen_mm.restype = ndpointer(dtype=c_int, shape=(ht,wt))
 m_arraytype = ctypes.c_int * len(m)
 n_arraytype = ctypes.c_int * len(n)
 
-results = trial.strassen_mm(m_arraytype(*m), n_arraytype(*n), ctypes.c_int(wt), ctypes.c_int(ht))
+results = trial.strassen_mm(m_arraytype(*m), n_arraytype(*n), ctypes.c_int(wt), ctypes.c_int(ht), ctypes.c_int(thresh))
 
-print("C RESULT:")
+print("C RESULT (REG):")
 print(results)
+
+
+trial2 = ctypes.CDLL(so_file2)
+trial2.strassen_mm.argtypes = (ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int),ctypes.c_int, ctypes.c_int, ctypes.c_int)
+trial2.strassen_mm.restype = ndpointer(dtype=c_int, shape=(ht,wt))
+
+results2 = trial2.strassen_mm(m_arraytype(*m), n_arraytype(*n), ctypes.c_int(wt), ctypes.c_int(ht), ctypes.c_int(thresh))
+
+print("C RESULT (PARALLEL):")
+print(results2)
+
 
 #assert (presult == results).all()
 

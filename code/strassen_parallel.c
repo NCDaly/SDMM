@@ -3,7 +3,7 @@
 #include <time.h>
 #include <pthread.h>
 
-#define THRESH 8
+int thresh;
 
 struct timer {
     clock_t start;
@@ -31,6 +31,17 @@ typedef struct {
 
 MMDATA multi_data;
 
+/*void print_matrix(int d, int **a) {
+    int i,j;
+    for (i = 0; i < d; i++) {
+        printf("row %i: ", i);
+        for (j = 0; j < d; j++) {
+            printf("%d ", a[i][j]);
+        }
+        printf("\n");
+    }
+}*/
+
 
 void add(int d, int **a, int **b, int **result) {
     //Add two nxn matrixs
@@ -56,11 +67,6 @@ void sub(int d, int **a, int **b, int **result) {
             result[i][j] = a[i][j] - b[i][j];
         }
     }
-
-    int x1 = 1/7;
-    int x2 = 8/7;
-
-    printf("1/7: %d 6/7 %d\n", x1, x2);
 }
 
 /*void mm_multi(int d, int **matrixm, int **matrixn, int **result) {
@@ -117,13 +123,13 @@ void *mm_multi(void *arg) {
 
 void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
 {
-    if (wt <= THRESH) {
+    if (wt <= thresh) {
         int num_threads = 4;
         pthread_t threads[num_threads];
         pthread_attr_t attr;
         void *status;
         int t;
-        int hold_ht = THRESH/num_threads;
+        int hold_ht = thresh/num_threads;
 
         multi_data.num = hold_ht;
         multi_data.d = wt;
@@ -266,6 +272,15 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
         add(len, B21, B22, hold2);
         str_mm(len, len, hold, hold2, m7);
         
+        /*print_matrix(len, m1);
+        print_matrix(len, m2);
+        print_matrix(len, m3);
+        print_matrix(len, m4);
+        print_matrix(len, m5);
+        print_matrix(len, m6);
+        print_matrix(len, m7);*/
+
+
         //Solving C's
         add(len, m1, m4, C11);
         sub(len, C11, m5, C11);
@@ -340,7 +355,7 @@ void str_mm(int ht, int wt, int **matrixm, int **matrixn, int **result)
     }
 }
 
-int * strassen_mm(int *m, int *n, int wt, int ht)
+int * strassen_mm(int *m, int *n, int wt, int ht, int t)
 {
 
     /*int m[] = {5,2,6,1,0,6,2,0,
@@ -364,6 +379,8 @@ int * strassen_mm(int *m, int *n, int wt, int ht)
 
     timerv.main.start = clock();
 
+    thresh = t;
+
     int **matrixm;
     matrixm = malloc(sizeof(int*) * ht);
     int **matrixn;
@@ -373,7 +390,7 @@ int * strassen_mm(int *m, int *n, int wt, int ht)
     int * answer = (int *)malloc(sizeof(int) * (ht * wt));
 
     
-    int x;
+    int x, y;
     for(x = 0; x < ht; x++) {
         matrixm[x] = malloc(sizeof(int) * wt);
         matrixn[x] = malloc(sizeof(int) * wt);
@@ -381,13 +398,12 @@ int * strassen_mm(int *m, int *n, int wt, int ht)
     }
 
     //DELETE
-    int k,l;
     int count = 0;
-    for (k = 0; k <ht; k++) {
-        for (l = 0; l < wt; l++) {
-            matrixm[k][l] = m[count];
-            matrixn[k][l] = n[count];
-            result[k][l] = 0;
+    for (x = 0; x <ht; x++) {
+        for (y = 0; y < wt; y++) {
+            matrixm[x][y] = m[count];
+            matrixn[x][y] = n[count];
+            result[x][y] = 0;
             answer[count] = count;
             count++;
         }
@@ -395,19 +411,18 @@ int * strassen_mm(int *m, int *n, int wt, int ht)
 
     str_mm(ht, wt, matrixm, matrixn, result);
 
-    int i,j;
     int hold = 0;
-    for (i = 0; i < ht; i++) {
-         for (j = 0; j < wt; j++) {
-            answer[hold] = result[i][j];
+    for (x = 0; x < ht; x++) {
+         for (y = 0; y < wt; y++) {
+            answer[hold] = result[x][y];
             hold++;
         }
     }
 
-    for (i = 0; i < ht; i++) {
-        free(result[i]);
-        free(matrixm[i]);
-        free(matrixn[i]);
+    for (x = 0; x < ht; x++) {
+        free(result[x]);
+        free(matrixm[x]);
+        free(matrixn[x]);
     }
     free(result);
     free(matrixm);
