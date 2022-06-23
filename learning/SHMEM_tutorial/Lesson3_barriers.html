@@ -51,7 +51,7 @@ Lets look at the first set one at a time. (The second set will be discussed in t
 <h3>2. shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)</h3>
 	<ul>
 		<li> This barrier does the same thing as shmem_barrier_all, but only for a subset of PEs.
-		<li> Example of useage: Suppose you only want the odd PEs (1,3,5,7,9) to be synced and the even
+		<li> Example of usage: Suppose you only want the odd PEs (1,3,5,7,9) to be synced and the even
 	PEs not equal to 0 (2,4,6,8) to be synced. Then,
 	<pre>
 		PE_start_odd = 1

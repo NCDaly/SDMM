@@ -1,0 +1,58 @@
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <title>SHMEM - Lesson 4: List of Commands</title>
+    <link rel="stylesheet" type="text/css" href="arduino.css">
+    <script src="arduino.js" language="javascript" type="text/javascript"></script>
+  </head>
+
+<body>
+
+<center>
+<table class="chart"><tbody>
+	<tr>
+	<td>int shmem_n_pes() </td> 
+	</tr>
+	<tr>  
+	<td>int shmem_my_pe()</td>
+	</tr>
+	<tr> 
+	<td>void shmem_init()</td>
+	</tr>
+	<tr> 
+	<td>void shmem_finalize()</td>
+	</tr>
+	<tr> 
+	<td>TYPE shmem_g(const TYPE *source, int pe);</td>
+	</tr>
+	<tr> 
+	<td>void shmem_get(TYPE *dest, const TYPE *source, size_t nelems, int pe)</td>
+	</tr>
+	<tr> 
+	<td>void shmem_p(TYPE *dest, TYPE value, int pe)</td>
+	</tr>
+	<tr> 
+	<td>void shmem_put(TYPE *dest, const TYPE *source, size_t nelems, int pe)</td>
+	</tr>
+	<tr> 
+	<td>void shmem_barrier_all()</td>
+	</tr>
+	<tr> 
+    <td>void shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)</td>
+	</tr>
+	<tr> 
+	<td>void shmem_sync_all()</td>
+	</tr>
+	<tr> 
+	<td>void shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)</td>
+	</tr>
+	<tr> 
+	<td>void shmem_quiet()	</td>
+	</tr>
+	<tr> 
+	<td>void shmem_wait_until(TYPE *ivar, int cmp, TYPE cmp_value)</td>
+    </tr>
+</tbody></table></center>
+
+</body>    
+</html>

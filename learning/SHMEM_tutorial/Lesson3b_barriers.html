@@ -31,6 +31,10 @@ Barriers/Synchronization until data has changed (only concerned with one PE):
 		<li> arg1 - cmp: comparison operator </li>
 <br><br>
 <center><table class="chart"><tbody>
+    <tr>
+        <th> SHMEM Comparison Operator</th>
+        <th> Comparison Performed</th>
+    </tr> 
 	<tr>
 		<td>SHMEM_CMP_EQ</td>
 		<td>a = b</td>
@@ -82,7 +86,7 @@ int main(){
 
 	if (my_pe == 0){
 		//wait until the value in new changes due to PE 1 placing value 10 in it
-		shmem_int_wait_until(&new, shmem_cmp_ne, old);
+		shmem_int_wait_until(&new, SHMEM_CMP_NE, old);
 		printf("new value: %d versus old value: %d\n", new, old);
 	}
 	if (my_pe == 1){

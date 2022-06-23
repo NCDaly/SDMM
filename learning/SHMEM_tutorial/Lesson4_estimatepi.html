@@ -41,6 +41,11 @@ We are going to focus on the first method and this requires us to recall two fac
     <li> the area of a circle is 2*pi*r. </li>
 </ol>
 
+
+<div style="float:right;">
+  <img width=70% alt="quarter circle and random samples"
+    src="pi_estimation.png"><br>
+</div>
 With these two facts in hand, the probability of picking a point (x,y) from the 
 region {[0.1], [0,1]} at random and the point lying in the quarter of the circle is: <br>
 <pre>
@@ -55,6 +60,8 @@ be approximated by <br>
      ----------------------------------
             total # of samples
 </pre><br>
+
+
 <br>
 In the code below we approximate pi by applying the above formula in the following way:
 <ul>
@@ -72,6 +79,8 @@ In the code below we approximate pi by applying the above formula in the followi
             10,000 * num_pes
 </pre>
 </ul>
+
+<br><br>
 <h3>Approximating pi with one PE:</h3>
 <table class="code"><tbody><tr><td>
 <pre>
@@ -94,13 +103,13 @@ int main(){
 
     //seed the randomizer
     srand(time(0));
-    for (int i = 0; i < NUM; i++){
+    for (int i = 0; i &lt; NUM; i++){
         //generate point(x,y) in first quadrant
         //note: double is a 64 bit floating point
         double x = (double) rand() / (double) RAND_MAX;
         double y = (double) rand() / (double) RAND_MAX;
         f_x = circle(x);
-        if (pow(y,2) <= f_x){
+        if (pow(y,2) &lt;= f_x){
             count += 1;
         }
     }
@@ -110,6 +119,11 @@ int main(){
     return 0;
 }</pre>  
 </td></tr></tbody></table>
+
+To compile: <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	gcc pi_estimate0.c -o pi_estimate -lm</i><br>
+To run:  <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	./pi_estimate</i>
 
 
 
@@ -143,13 +157,13 @@ int main(){
 
     //seed the randomizer
     srand(time(0)+me);
-    for (int i = 0; i < NUM; i++){
+    for (int i = 0; i &lt; NUM; i++){
         //generate point(x,y) in first quadrant
         //note: double is a 64 bit floating point
         double x = (double) rand() / (double) RAND_MAX;
         double y = (double) rand() / (double) RAND_MAX;
         f_x = circle(x);
-        if (pow(y,2) <= f_x){
+        if (pow(y,2) &lt;= f_x){
             count += 1;
         }
     }
@@ -157,7 +171,7 @@ int main(){
     printf("%d: count %d\n", me, count);
     shmem_barrier_all(); //making sure all of the counts have been done
     if (me == 0){
-        for (int pe = 1; pe < npes; pe++){
+        for (int pe = 1; pe &lt; npes; pe++){
             uint32_t toadd = shmem_int_g(&count, pe);
             printf("to add: %d\n", toadd);
             count += toadd;
@@ -169,6 +183,12 @@ int main(){
     return 0;
 }</pre>  
 </td></tr></tbody></table>
+
+To compile: <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshcc pi_estimate1.c -o pi_estimate1 -lm</i><br>
+To run:  <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshrun -np 10 pi_estimate1</i>
+
 
 
 <br><br>
