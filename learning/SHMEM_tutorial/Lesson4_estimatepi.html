@@ -1,0 +1,185 @@
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <title>SHMEM - Lesson 4: Combining Tools</title>
+    <link rel="stylesheet" type="text/css" href="arduino.css">
+    <script src="arduino.js" language="javascript" type="text/javascript"></script>
+  </head>
+
+<body>
+  <img style="width:100%;" alt="SHMEMmer Wanna Be"
+    src="banner1.png"><br>
+<h1>My Journey To Understanding and Using SHMEM:</h1>
+
+<h2>Lesson 4: Combining Tools</h2>
+
+<a href="list_of_commands.html">List of commands learned so far.</a>
+
+<br><br>	
+With our new stash of tools lets have a bit of fun and combine a few before adding more 
+tools to our arsenal.
+
+<br><br>
+For those of you who are internally geeks and love pi day, we are going to venture 
+approximating pi via 
+<span title = "a fancy term that just means we are going to sample over and over
+and over again until we obtain a stable approximation of desired function">
+<u>Monte Carlo</u></span>. 
+<br><br>
+There are two common methods of approximating pi with Monte Carlo: 
+<ol>
+	<li> approximate the area in a quarter of a circle, more specifically the area under the curve 
+	sqrt(1-x^2) where 0&lt;=x&lt;=1 </li>
+	<li> approximate the function: f(x) =  1-x^2</li>
+</ol>
+We are going to focus on the first method and this requires us to recall two facts:
+
+<ol>
+    <li> the equation of a circle with center (0,0) and radius 1 is <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	x^2 + y^2 = 1 </li>
+
+    <li> the area of a circle is 2*pi*r. </li>
+</ol>
+
+With these two facts in hand, the probability of picking a point (x,y) from the 
+region {[0.1], [0,1]} at random and the point lying in the quarter of the circle is: <br>
+<pre>
+	area of quarter of the circle       pi/4
+	-----------------------------   =   ---- = pi/4
+	      area of square                 1
+</pre><br>
+So, if we take a ton of samples from the set {[0,1], [0,1]}, then the above can 
+be approximated by <br>
+<pre>
+     # of samples in the quarter circle
+     ----------------------------------
+            total # of samples
+</pre><br>
+<br>
+In the code below we approximate pi by applying the above formula in the following way:
+<ul>
+    <li> each PE picks 10,000 random (x,y) values between 0 and 1 </li>
+    <li> determines if (x,y) lies in the circle:</li>
+    <ul>
+        <li> calculates the corresponding f(x) value for each x: sqrt(1-x^2)</li>
+        <li> if y&lt;f(x), then yes it is in the circle; otherwise no</li>
+    </ul>
+    <li> counts the number of samples that are a "yes, in the circle" </li>
+    <li> approximate pi: </li>
+<pre>
+     total # of samples in the quarter circle
+     ----------------------------------
+            10,000 * num_pes
+</pre>
+</ul>
+<h3>Approximating pi with one PE:</h3>
+<table class="code"><tbody><tr><td>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;
+#include &lt;math.h&gt;
+#include &lt;inttypes.h&gt;
+
+#define NUM 100000
+
+double circle(double x){
+	return 1 - pow(x,2);
+}
+
+int main(){
+
+    static uint32_t count = 0;
+    double f_x;
+
+    //seed the randomizer
+    srand(time(0));
+    for (int i = 0; i < NUM; i++){
+        //generate point(x,y) in first quadrant
+        //note: double is a 64 bit floating point
+        double x = (double) rand() / (double) RAND_MAX;
+        double y = (double) rand() / (double) RAND_MAX;
+        f_x = circle(x);
+        if (pow(y,2) <= f_x){
+            count += 1;
+        }
+    }
+    
+    printf("count total: %d\n", count);
+    printf("est of pi: %f\n", (double)count/((double)NUM )*4);
+    return 0;
+}</pre>  
+</td></tr></tbody></table>
+
+
+
+
+<h3>Approximating pi with N PEs:</h3>
+
+<table class="code"><tbody><tr><td>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;
+#include &lt;math.h&gt;
+#include &lt;inttypes.h&gt;
+
+#include &lt;shmem.h&gt;
+
+#define NUM 100000
+
+double circle(double x){
+	return 1 - pow(x,2);
+}
+
+int main(){
+    int me, npes;
+    shmem_init();
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
+
+    static uint32_t count = 0;
+    double f_x;
+
+    //seed the randomizer
+    srand(time(0)+me);
+    for (int i = 0; i < NUM; i++){
+        //generate point(x,y) in first quadrant
+        //note: double is a 64 bit floating point
+        double x = (double) rand() / (double) RAND_MAX;
+        double y = (double) rand() / (double) RAND_MAX;
+        f_x = circle(x);
+        if (pow(y,2) <= f_x){
+            count += 1;
+        }
+    }
+
+    printf("%d: count %d\n", me, count);
+    shmem_barrier_all(); //making sure all of the counts have been done
+    if (me == 0){
+        for (int pe = 1; pe < npes; pe++){
+            uint32_t toadd = shmem_int_g(&count, pe);
+            printf("to add: %d\n", toadd);
+            count += toadd;
+        }
+        printf("%d: count total: %d\n", me, count);
+        printf("%d: ratio: %f\n", me, (double)count/((double)NUM * npes));
+        printf("%d: est of pi: %f\n", me, (double)count/((double)NUM * npes)*4);
+    }
+    return 0;
+}</pre>  
+</td></tr></tbody></table>
+
+
+<br><br>
+Hold on you might say, there has to be an easier way than just grabbing every single count
+from all the PEs? Well, there is!!! And that is the atomic_add. 
+(<a href="Lesson5_atomics.html">See the next lesson</a>)
+
+
+<br><br>
+
+
+
+
+

@@ -1,0 +1,109 @@
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <title>SHMEM - Lesson 3b: Barriers</title>
+    <link rel="stylesheet" type="text/css" href="arduino.css">
+    <script src="arduino.js" language="javascript" type="text/javascript"></script>
+  </head>
+
+<body>
+  <img style="width:100%;" alt="SHMEMmer Wanna Be"
+    src="banner1.png"><br>
+<h1>My Journey To Understanding and Using SHMEM:</h1>
+
+<h2>Lesson 3: An Introduction to Barriers Continued</h2>
+Hold on . . . do we really have to wait for all of the data to be moved? What if we 
+only care about one element before continuing on? I don't know if that went through
+your mind, but, you can at least pretend it did!
+<br><br>
+If you recall from the last lesson, there were barriers that included a subset or the whole
+entire set of PEs and barriers that waited for data on one PE to change. We are now going
+to look at the latter. In previous versions of openSHmem, there were both shmem_wait
+and shmem_wait_until. Now, shmem_wait has been deprecated and we have only shmem_wait_until
+to work with (but don't worry, it encompasses shmem_wait).
+
+<br><br>
+Barriers/Synchronization until data has changed (only concerned with one PE):
+<ul>
+	<li>void <b>shmem_&lt;TYPENAME&gt;_wait_until(TYPE *ivar, int cmp, TYPE cmp_value)</b></li>
+	<ul>
+		<li> arg0 - *ivar: pointer to an integer value that is remotely availabe </li>
+		<li> arg1 - cmp: comparison operator </li>
+<br><br>
+<center><table class="chart"><tbody>
+	<tr>
+		<td>SHMEM_CMP_EQ</td>
+		<td>a = b</td>
+	<tr>
+		<td>SHMEM_CMP_NE</td>
+		<td>a != b</td>
+	</tr>
+	<tr>
+		<td>SHMEM_CMP_LT</td>
+		<td>a < b</td>
+	</tr>
+	<tr>
+		<td>SHMEM_CMP_LE</td>
+		<td>a <= b</td>
+	</tr>
+	<tr>
+		<td>SHMEM_CMP_GT</td>
+		<td>a > b</td>
+	</tr>
+	<tr>
+		<td>SHMEM_CMP_GE</td>
+		<td>a >= b</td>
+	</tr>
+</tbody></table></center>
+<br><br>
+
+		<li> arg2 - cmp_value: integer value to compare ivar to </li>
+	</ul>
+</ul>
+
+<br>
+<br>
+<table class="code"><tbody><tr><td>
+<pre>
+//wait_until.c
+
+#include &ltstdio.h&gt
+#include &ltshmem.h&gt
+
+int main(){
+	int my_pe, num_pe;         //declare variables for both pe id of processor and the number of pes
+	
+	shmem_init();
+	num_pe = shmem_n_pes();    //obtain the number of pes that can be used
+	my_pe  = shmem_my_pe();    //obtain the pe id number
+	
+	static int new = 5;
+    int old = new;
+
+	if (my_pe == 0){
+		//wait until the value in new changes due to PE 1 placing value 10 in it
+		shmem_int_wait_until(&new, shmem_cmp_ne, old);
+		printf("new value: %d versus old value: %d\n", new, old);
+	}
+	if (my_pe == 1){
+		int to_put = 10;
+		shmem_int_p(&new, to_put, 0);
+	}
+
+	shmem_finalize();
+	return 0;
+}</pre>  
+</td></tr></tbody></table>
+
+<br><br>
+To compile: <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshcc wait_until.c -o wait_until</i><br>
+To run:  <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshrun -np 2 wait_until</i>
+
+<br><br>
+
+
+
+</body>    
+</html>

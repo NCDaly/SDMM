@@ -1,0 +1,202 @@
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <title>SHMEM - Lesson 3: Barriers</title>
+    <link rel="stylesheet" type="text/css" href="arduino.css">
+    <script src="arduino.js" language="javascript" type="text/javascript"></script>
+  </head>
+
+<body>
+  <img style="width:100%;" alt="SHMEMmer Wanna Be"
+    src="banner1.png"><br>
+<h1>My Journey To Understanding and Using SHMEM:</h1>
+
+<h2>Lesson 3: An Introduction to Barriers</h2>
+
+Hold up!!! I need that tool! Many times before a processor can start a task, it must be
+ensured that it has the correct data. For instance, if a processor was to add A=3 and B=4, 
+but another processor decided to change B to 1, the resultant sum would be wrong. OR 
+if a processor was to add up all of the values given to it by the other processors, it
+would be nice to know that it actually received all of the new values. In both of these 
+scenarios, a barrier of some sort would be beneficial.
+<br><br>
+In SHMEM, there are a few types of barriers useful for a variety of occasions.
+<br><br>
+Barriers/Synchronization across all or a subset of PEs:
+<ul>
+	<li>shmem_barrier_all</li>
+	<li>shmem_barrier</li>
+	<li>shmem_sync_all</li>
+	<li>shmem_sync</li>
+	<li>shmem_quiet</li>
+</ul>
+
+Barriers/Synchronization until data has changed (only concerned with one PE):
+<ul>
+	<li>shmem_wait_until</li>
+</ul>
+
+Lets look at the first set one at a time. (The second set will be discussed in the 
+<a href="Lesson3b_barriers.html">next lesson</a>.)
+
+<h3>1. shmem_barrier_all()</h3>
+	<ul>
+		<li> "registers the arrival of a PE at a barrier and blocks the PE until all other PEs 
+		arrive at the barrier" (documentation)</li>
+		<li>KEY:  blocks the PE until ALL local updates and remote memory updates are complete</li>
+		<li>essentially, it is a means to synchronize all of the PEs and to ensure all data 
+		stores are done</li>
+	</ul>
+
+<h3>2. shmem_barrier(int PE_start, int logPE_stride, int PE_size, long *pSync)</h3>
+	<ul>
+		<li> This barrier does the same thing as shmem_barrier_all, but only for a subset of PEs.
+		<li> Example of useage: Suppose you only want the odd PEs (1,3,5,7,9) to be synced and the even
+	PEs not equal to 0 (2,4,6,8) to be synced. Then,
+	<pre>
+		PE_start_odd = 1
+		PE_start_even = 2
+		logPE_stride_odd = log_2(2) = 1 //striding by 2
+		PE_size_odd = 10/2 = 5	
+		PE_size_even = 10/2 - 1 =  4    //5 even PEs - PE0
+	</pre> </li>
+		<li>pSync may seem to be a bit strange. Essentially, it is an array that has to be 
+		initialized the same for each PE and its role is to keep track of the sync status of the PEs.
+		Since we are wanting two different barriers to be running at once, we will create two
+		of these:
+		<ul>
+			<li> pSync_odd</li> 
+			<li> pSync_even</li>
+		</ul>
+	</ul>
+	
+	<table class="code"><tbody><tr><td>
+	<pre>	
+  //barrier.c
+
+  #include &lt;stdio.h&gt;
+  #include &lt;shmem.h&gt;
+  
+  int main()
+  {
+
+      //creating pSync arrays for both groups
+      static long pSync_odd[SHMEM_BARRIER_SYNC_SIZE];
+      static long pSync_even[SHMEM_BARRIER_SYNC_SIZE];
+      
+      //initializing pSync arrays
+      for (int i = 0; i &lt; SHMEM_BARRIER_SYNC_SIZE; i++){
+          pSync_odd[i] = SHMEM_SYNC_VALUE;
+          pSync_even[i] = SHMEM_SYNC_VALUE;
+      }
+  
+      shmem_init();
+      int my_pe = shmem_my_pe();
+      int num_pes = shmem_n_pes();
+
+      //symmetric space
+      static int num_of_scalpel_injuries; 
+      static int num_of_ice_cream_scoop_injuries; 
+
+      //if odd:
+      if (my_pe%2 != 0){
+          num_of_scalpel_injuries = my_pe-1;
+          //sync all odd to make sure everyone has written down their answer
+          //to the number of scalpel injuries survey
+          shmem_barrier(1, 1, (num_pes/2), pSync_odd);
+          int num_of_neighbor = shmem_int_g(&num_of_scalpel_injuries, (my_pe+2)%10);
+          printf("%d: I personally had only %d scalpel injuries in my line of work 
+            whereas my odd neighbor had %d.\n", 
+            my_pe, num_of_scalpel_injuries, num_of_neighbor);
+      }
+      //if even and not 0
+      else if (my_pe != 0){  
+          num_of_ice_cream_scoop_injuries = my_pe;
+          //sync all even to make sure everyone has written down their answer
+          //to the number of ice cream scoop injuries survey
+          shmem_barrier(2, 1, (num_pes/2 - 1), pSync_even);
+          int num_of_neighbor; 
+          if (my_pe == 2){ 
+              num_of_neighbor = shmem_int_g(&num_of_ice_cream_scoop_injuries,8);
+          } else {
+              num_of_neighbor = shmem_int_g(&num_of_ice_cream_scoop_injuries, my_pe-2);
+          }
+          printf("%d: Yay! I am not the only one who hurts themselves 
+            with an ice cream scoop! My neighbor has done it %d times.\n", 
+            my_pe, num_of_neighbor);
+      }
+      
+
+      shmem_finalize();	
+      return 0;
+  }</pre>  
+	</td></tr></tbody></table>
+	<br><br>
+To compile: <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshcc barrier.c -o barrier</i><br>
+To run:  <br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;	<i>	oshrun -np 10 barrier</i>
+
+<br><br>
+	<br><br>
+	The above code splits the 10 PEs into two groups, as afore mentioned: (1,3,5,7,9) and
+	(2,4,6,8). Suppose the odd group wants to know how many scalpel injuries their neighbor 
+	(to the right) had. Now, lets be honest, we all accidentally cut our lab partners in 
+	Biology class. 
+	<br><br>
+	Whereas, the even group is a bit more civilized and they just want to 
+	know if their neighbor (to the left, excluding 0) has ever hurt themselves with an 
+	ice cream scoop (I may have just done this . . .).
+
+	<br><br>
+	<u>To note:</u>
+	<ul>
+		<li>despite the different sizes of the two groups (4 v 5), the psync array is still
+		the same default size SHMEM_BARRIER_SYNC_SIZE.</li>
+		<li>This initialization can either be done before or after shmem_init.</li>
+		<li>The shmem_g function requires the source to be static.</li>
+	</ul>
+
+<h3>3. shmem_sync_all()</h3>
+	<ul>
+		<li> syncs all the PEs without ensuring remote storage is complete.</li>
+		<li> KEY: does not ensure remote storage is complete -- I know this was just stated
+	above, but this is crucial to both note and understand. You might be wondering, why
+	would I ever want to use it then? Well, because it does not require remote storage to 
+	be completed, the synchronization will not take as long. And the PEs can then continue
+	on with their tasks. BUT!?! you may say, what about the data being stored? Lets
+	consider the following code: </li>
+	<br><br>
+	TODO
+	<br><br>
+	In this code, the PEs will not be using the stored data for quite a while and you just
+	want to ensure that all the PEs have at least sent off the data to be stored.
+	</ul>
+<h3>4. shmem_sync(int PE_start, int logPE_stride, int PE_size, long *pSync)</h3>
+	<ul>
+		<li>Does the same thing as shmem_sync_all, but with a subset of PEs -- analogous
+		to shmem_barrier_all and shmem_barrier. That being said, to see an example of the
+		arguments in play, see shmem_barrier.</li>
+		<li> Args: </li>
+		<ul>
+			<li> <i>arg0 - PE_start:</i> the PE number to start with </li>
+			<li> <i>arg1 - logPE_stride:</i> log_2(stride). That is, if you are striding the PEs by 2, 
+			logPE_stride=1, if by 4, logPE_stride=2, etc.</li>
+			<li> <i>arg2 - PE_size:</i>  the number of PEs that will be in the synced group</li>
+			<li> <i>arg3 - *pSync:</i>  a pointer to an array of size SHMEM_BARRIER_SYNC_SIZE 
+			that all have the default values SHMEM_SYNC_VALUE</li>
+		</ul>
+	</ul>	
+	
+<h3>5. shmem_quiet()</h3> 
+	TODO
+	<ul>
+		<li>"shmem_quiet is most useful as a way of ensuring completion of several 
+		Put, AMO, memory store, and non- blocking Put and Get routines to symmetric 
+		data objects initiated by the calling PE. For example, one might use shmem_quiet 
+		to await delivery of a block of data before issuing another Put or nonblocking 
+		Put routine, which sets a completion flag on another PE." (documentation)</li>
+	</ul>
+		
+</body>    
+</html>
