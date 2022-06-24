@@ -24,7 +24,7 @@ thankfully, we have something similar in SHMEM.
              int nreduce, int PE_start, int logPE_stride, int PE_size, TYPE *pWrk, long *pSync )</b></li>
 </ul>
 where OP can be sum, min, and, or, xor, max, min.
-
+<br><br>
 Phew. To be honest, there is a lot to discuss with the above, so lets take this little by little.
 
 <ul>
@@ -33,7 +33,7 @@ Phew. To be honest, there is a lot to discuss with the above, so lets take this 
 <li><i>arg2 - int nreduce</i>: number of elements in array to be reduced</li>
 </ul>
 
-So far so good. We have dealt with the above below, and we have even come across the next 3 arguments as well while learning functions like shmem_barrier.
+So far so good. We have dealt with the above before, and we have even come across the next 3 arguments as well while learning functions like shmem_barrier.
 Recall that shmem_barrier allowed for synchronization amongst a
 subset of PEs, rather than the whole set. The subset was defined
 by three traits: the lowest PE number in the set, 
@@ -47,9 +47,9 @@ arguments:
     <li><i>arg5 - int PE_size</i>: the number of PEs in the set</li>
 </ul>
 
-For, example, {1,5,9} would give PE_start=1, logPE_stride=2, PE_size=3.
+For, example, the set {1,5,9} would give PE_start=1, logPE_stride=2, PE_size=3.
 <br><br>
-You have also seen the last argument pSync before; however, we have not yet seen pWrk. So, lets take a few moments to understand the pointer *pWrk.
+You have also seen the seventh argument pSync before; however, we have not yet seen pWrk. So, lets take a few moments to understand the pointer *pWrk.
 
 <ul>
 <li> <i>arg6 - TYPE *pWrk</i>: a pointer to a symmetric array of type TYPE and size 
@@ -71,7 +71,7 @@ Unlike pSync which requires you to set each value of the
 array, pWrk can just be left alone until the reduction 
 functions are called.
 <br><br>
-The last argument is pSync, which as already mentioned is also used in shmem_barrier.
+The last argument is pSync. (Again, recall its use in  shmem_barrier.)
    <ul>
         <li> <i>long *pSync</i>: pointer to a symmetric array of type long and of size SHMEM_REDUCE_SYNC_SIZE. 
 Each element must be set to SHMEM_SYNC_VALUE.
@@ -82,7 +82,7 @@ Each element must be set to SHMEM_SYNC_VALUE.
 <h3>Approximating pi revisited:</h3>
 Lets redo the monte carlo simulation of pi, and this time 
 lets use shmem_long_sum_to_all.
-<br>
+<br><br>
 
 <table class="code"><tbody><tr><td>
 <pre>
