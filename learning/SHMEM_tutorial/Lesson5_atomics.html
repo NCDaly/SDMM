@@ -1,0 +1,211 @@
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <title>SHMEM - Lesson 5: Atomic Functions</title>
+    <link rel="stylesheet" type="text/css" href="arduino.css">
+    <script src="arduino.js" language="javascript" type="text/javascript"></script>
+  </head>
+
+<body>
+  <img style="width:100%;" alt="SHMEMmer Wanna Be"
+    src="banner1.png"><br>
+<h1>My Journey To Understanding and Using SHMEM:</h1>
+
+<h2>Lesson 5: Reduce Functions</h2>
+
+Recall the dilemma we were in during lesson 4. We had on each processor a value
+that had to be sent to the root node, which would then be added to the count value. If 
+you have touched MPI, this situation may remind you of the reduce function. Well, 
+thankfully, we have something similar in SHMEM.
+
+
+<ul>
+    <li><b>shmem_&lt;TYPENAME&gt;_&lt;OP&gt;_to_all( TYPE *dest, const TYPE *source,
+             int nreduce, int PE_start, int logPE_stride, int PE_size, TYPE *pWrk, long *pSync )</b></li>
+</ul>
+where OP can be sum, min, and, or, xor, max, min.
+
+Phew. To be honest, there is a lot to discuss with the above, so lets take this little by little.
+
+<ul>
+<li><i>arg0 - TYPE *dest</i>: pointer to the destination array</li>
+<li><i>arg1 - TYPE *source</i>: pointer to the source array</li>
+<li><i>arg2 - int nreduce</i>: number of elements in array to be reduced</li>
+</ul>
+
+So far so good. We have dealt with the above below, and we have even come across the next 3 arguments as well while learning functions like shmem_barrier.
+Recall that shmem_barrier allowed for synchronization amongst a
+subset of PEs, rather than the whole set. The subset was defined
+by three traits: the lowest PE number in the set, 
+the stride between the PE numbers in the set, 
+and the number of PEs in the set. Similarly, we have the next three
+arguments:
+
+<ul>
+    <li><i>arg3 - int PE_start</i>: the lowest PE number in the set </li> 
+    <li><i>arg4 - int logPE_stride</i>: log_2 of the stride between the PE numbers in the set</li>
+    <li><i>arg5 - int PE_size</i>: the number of PEs in the set</li>
+</ul>
+
+For, example, {1,5,9} would give PE_start=1, logPE_stride=2, PE_size=3.
+<br><br>
+You have also seen the last argument pSync before; however, we have not yet seen pWrk. So, lets take a few moments to understand the pointer *pWrk.
+
+<ul>
+<li> <i>arg6 - TYPE *pWrk</i>: a pointer to a symmetric array of type TYPE and size 
+   max( nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE)</li> 
+</ul>
+
+pWrk is a pointer to an array of the <i>same type</i> as the 
+destination and source. The reason being is that the array 
+to which pWrk points is where the reduction takes place. 
+That is, the values of source from each PE is placed in this 
+array and then combined using the designated operator. 
+<br><br>
+Because this array then has to hold the values while they are being reduced, 
+the size of the array must be at least<br> 
+<center>max( nreduce/2 + 1, SHMEM_REDUCE_MIN_WRKDATA_SIZE). 
+</center><br>
+
+Unlike pSync which requires you to set each value of the 
+array, pWrk can just be left alone until the reduction 
+functions are called.
+<br><br>
+The last argument is pSync, which as already mentioned is also used in shmem_barrier.
+   <ul>
+        <li> <i>long *pSync</i>: pointer to a symmetric array of type long and of size SHMEM_REDUCE_SYNC_SIZE. 
+Each element must be set to SHMEM_SYNC_VALUE.
+        </li>
+    </ul>
+
+
+<h3>Approximating pi revisited:</h3>
+Lets redo the monte carlo simulation of pi, and this time 
+lets use shmem_long_sum_to_all.
+<br>
+
+<table class="code"><tbody><tr><td>
+<pre>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;
+#include &lt;math.h&gt;
+#include &lt;inttypes.h&gt;
+
+#include &lt;shmem.h&gt;
+
+#define NUM 100000
+
+double circle(double x){
+	return 1 - pow(x,2);
+}
+
+int main(){
+    int me, npes;
+
+    //create needed arrays for the reduction call
+    long pWrk[SHMEM_REDUCE_MIN_WRKDATA_SIZE]; //can automatically do shMEM_REDUCE_MIN_WRKD
+ATA_SIZE since nreduce/2+1=1
+    long pSync[SHMEM_REDUCE_SYNC_SIZE];
+    for (int i = 0; i &lt; SHMEM_REDUCE_SYNC_SIZE; i++){
+        pSync[i] = SHMEM_SYNC_VALUE;
+    }
+
+    shmem_init();
+    me = shmem_my_pe();
+    npes = shmem_n_pes();
+
+    static long count = 0;
+    double f_x;
+
+    //seed the randomizer
+    srand(time(0)+me);
+    for (int i = 0; i &lt; NUM; i++){
+        //generate point(x,y) in first quadrant
+        //note: double is a 64 bit floating point
+        double x = (double) rand() / (double) RAND_MAX;
+        double y = (double) rand() / (double) RAND_MAX;
+        f_x = circle(x);
+        if (pow(y,2) &lt;= f_x){
+            count += 1;
+        }
+    }
+
+    printf("%d: count %d\n", me, count);
+
+    static long total = 0; //needs to be in symmetric memory
+    
+    //note that we are only reducing one element
+    //                      starting with PE 0
+    //                      striding by 1 --&gt; log_2(1) = 0
+    shmem_long_sum_to_all(&total, &count, 1, 0, 0, npes, pWrk, pSync);   
+ 
+    if (me == 0){
+        printf("%d: count total: %d\n", me, total);
+        printf("%d: ratio: %f\n", me, (double)total/((double)NUM * npes));
+        printf("%d: est of pi: %f\n", me, (double)total/((double)NUM * npes)*4);
+    }
+    return 0;
+}</pre>  
+</td></tr></tbody></table>
+
+<u>Things to note:</u>
+    <ul>
+        <li> there was no need for a barrier. Why? Because when the PE 
+comes out of the call to the reduction command, the destination array 
+has been updated. In addition, pWrk and pSync are reset to the values 
+they were prior.</li>
+        <li> every PE has the total number of counts, not just the root PE. This reduction 
+was done across all the PEs. You may then ask like I did, is there a 
+routine similar to just MPI's reduce (all to one). The answer is no. 
+However, you can use the atomics if you would like.</li>
+    </ul>
+
+<u>Exercises:</u>
+<ol>
+    <li> Split the PEs into two groups (even and odd) and have the even estimate
+pi with a smaller NUM than the odd. Print off the numbers and compare.</li>
+    <li> Look up a method to use Monte Carlo to approximate e. (It is pretty sweet.) 
+While still estimating pi, have each PE provide an additional count for e and 
+pass that on at the same time (so, array is of size 2)</li>
+    <li> Implement a matrix-vector multiplication, where each PE receives 
+one row of the matrix</li>
+        Note: you can use 
+        <ul>
+           <li> <b>void *shmem_malloc(size_t size)</b></li>
+           <li> <b>void shmem_free(void *ptr)</b></li>
+        </ul>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 
+<ul>
+	<li><b>shmem_&lt;TYPENAME&gt;_atomic_add(TYPE *dest, TYPE value, int pe)</b></li>
+
+	<li><b>shmem_&lt;TYPENAME&gt;_atomic_and(TYPE *dest, TYPE value, int pe)</b></li>
+
+	<li><b>shmem_&lt;TYPENAME&gt;_atomic_or(TYPE *dest, TYPE value, int pe)</b></li>
+
+	<li><b>shmem_&lt;TYPENAME&gt;_atomic_xor(TYPE *dest, TYPE value, int pe)</b></li>
+</ul>
+
+->
+
+</body>    
+</html>
+
+
+
+
+

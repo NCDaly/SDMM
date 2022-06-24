@@ -84,6 +84,8 @@ In the code below we approximate pi by applying the above formula in the followi
 <h3>Approximating pi with one PE:</h3>
 <table class="code"><tbody><tr><td>
 <pre>
+//pi_estimate0.c
+
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;time.h&gt;
@@ -132,6 +134,8 @@ To run:  <br>
 
 <table class="code"><tbody><tr><td>
 <pre>
+//pi_estimate1.c
+
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;time.h&gt;
@@ -180,6 +184,9 @@ int main(){
         printf("%d: ratio: %f\n", me, (double)count/((double)NUM * npes));
         printf("%d: est of pi: %f\n", me, (double)count/((double)NUM * npes)*4);
     }
+
+    shmem_finalize();
+
     return 0;
 }</pre>  
 </td></tr></tbody></table>
@@ -193,7 +200,7 @@ To run:  <br>
 
 <br><br>
 Hold on you might say, there has to be an easier way than just grabbing every single count
-from all the PEs? Well, there is!!! And that is the atomic_add. 
+from all the PEs? Well, there is!!! And that is the add_to_all. 
 (<a href="Lesson5_atomics.html">See the next lesson</a>)
 
 
