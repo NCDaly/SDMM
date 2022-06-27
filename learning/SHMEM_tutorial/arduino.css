@@ -82,9 +82,10 @@ h1 {
   border-spacing: 20px;
   cellpadding: 2;
   cellspacing: 2;
-  background-color:#ffffff;
+  background-color:#dee9f0;
   border-collapse: collapse;
-
+  font-size: 14px;
+  width: 100%;
 }	  
 	  
 /* The tooltip itself is bold */
