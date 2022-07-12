@@ -7,7 +7,7 @@
 #include "interpolate_matrix.h"
 
 Matrix *interpolate_matrix_mat_dot(VdmInverter *inv, Matrix *shares, int term) {
-  
+
   TYPE *data = (TYPE *) calloc(inv->size, sizeof(TYPE));
   int rows = shares->rows;
   int cols = shares->cols;
@@ -20,7 +20,7 @@ Matrix *interpolate_matrix_mat_dot(VdmInverter *inv, Matrix *shares, int term) {
   for (int i = 0; i < rows; i++) {
     for (int j = 0; j < cols; j++) {
       // Gather shares of element
-      for (k = 0; k < inv->size; k++) {
+      for (int k = 0; k < inv->size; k++) {
 	int pe = inv->alpha[k];
 	data[k] = *element(&shares[pe], i, j);
       }

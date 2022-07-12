@@ -36,16 +36,9 @@ typedef struct {
 } Polynomial;
 
 // Get a pointer to element (i, j) in row-major matrix
-TYPE *element(Matrix *mat, int i, int j)
-{
-  return (TYPE *) (mat->data + i * mat->cols + j);
-}
+TYPE *element(Matrix *mat, int i, int j);
 
 // Safely destroy a heap-allocated matrix
-void destroy_matrix(Matrix *mat) {
+void destroy_matrix(Matrix *mat);
 
-  free(mat->data);
-  free(mat);
-}
-
-#endif /* SHMM_H */
+#endif /* SDMM_H */
