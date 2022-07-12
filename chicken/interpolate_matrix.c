@@ -9,8 +9,9 @@
 Matrix *interpolate_matrix_mat_dot(VdmInverter *inv, Matrix *shares, int term) {
 
   TYPE *data = (TYPE *) calloc(inv->size, sizeof(TYPE));
-  int rows = shares->rows;
-  int cols = shares->cols;
+  int first_done = inv->alpha[0];
+  int rows = shares[first_done].rows;
+  int cols = shares[first_done].cols;
 
   Matrix *result = malloc(sizeof(Matrix));
   result->rows = rows;
