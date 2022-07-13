@@ -202,7 +202,7 @@ int main() {
   printf("Number of equations (degree plus one): ");
   scanf("%d", &size);
 
-  VdmInverter *inv = vdm_inv_init(size, 19);
+  VdmInverter *inv = vdm_inv_init(size, 20);
   int *alpha = calloc(size, sizeof(int));
   int *coeff = calloc(size, sizeof(int));
   TYPE *data = calloc(size, sizeof(TYPE));
@@ -227,7 +227,7 @@ int main() {
   // Evaluate equations
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
-      int term = mpf_mul(coeff[j], mpf_mod((long) pow((double) alpha[i], (double) j)));
+      int term = mpf_mul(coeff[j], mpf_pow(alpha[i], j));
       data[i] = (TYPE) mpf_add((int) data[i], term);
     }
   }

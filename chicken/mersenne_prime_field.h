@@ -29,5 +29,6 @@ int mpf_add(int a, int b);
 int mpf_sub(int a, int b);
 int mpf_mul(int a, int b);
 int mpf_div(int a, int b);
+int mpf_pow(int a, int b);
 
 #endif /* MERSENNE_PRIME_FIELD_H */

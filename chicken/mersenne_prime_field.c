@@ -1,6 +1,7 @@
 // mersenne_prime_field.c
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "mersenne_prime_field.h"
 
 // Pre: 0 <= a <= 4^MPF_EXP
@@ -23,7 +24,7 @@ int mpf_neg(int a) {
   return mpf_mod(MPF_VAL - (long) a);
 }
 
-// Pre: a and b are in the field
+// Pre: a is in the field
 int mpf_inv(int a) {
 
   // Note that a^-1 = a^(2^p - 3) mod 2^p - 1
@@ -61,4 +62,17 @@ int mpf_mul(int a, int b) {
 int mpf_div(int a, int b) {
  
   return mpf_mod((long) a * (long) mpf_inv(b));
+}
+
+// Pre: a and b are in the field
+int mpf_pow(int a, int b) {
+
+  int c = 1;
+  for (int i = 0; i < MPF_EXP; i++) {
+    if (b & 1 << i) {
+      c = mpf_mul(c, a);
+    }
+    a = mpf_mul(a, a);
+  }
+  return c;
 }
