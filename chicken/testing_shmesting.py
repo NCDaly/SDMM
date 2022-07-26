@@ -9,7 +9,7 @@ MERSENNE_PRIME = pow(2, 31) - 1
 
 RESULTS_FILE = "results.txt"
 
-X_VALS = ["sdmm_final"]
+X_VALS = ["sdmm_final", "sdmm_final2"]
 D_VALS = [128, 256, 512, 1024, 2048]
 N_VALS = [16, 32, 48, 64]
 S_VALS = [2, 4, 8, 16]
@@ -109,7 +109,7 @@ def exportMatrix(matrix, filename):
         file.write(f"{matrix.rows}\n{matrix.cols}\n")
         file.write(str(matrix))
 
-def precompute(dim):
+def precompute(dim, check):
 
     path = f"test/test{dim}"
     try:        
@@ -117,9 +117,9 @@ def precompute(dim):
         # Only do computation if the dir doesn't exist
         A = Matrix(dim, dim)
         B = Matrix(dim, dim)
-        C = A * B
         exportMatrix(A, f"{path}/A.txt")
         exportMatrix(B, f"{path}/B.txt")
+        C = A * B if check else Matrix(0, 0)
         exportMatrix(C, f"{path}/C.txt")
     except FileExistsError:
         # Looks like it's already been done!
@@ -131,7 +131,7 @@ def precompute(dim):
 def getRuntime(stdout):
 
     lines = stdout.split("\n");
-    return float(line[0].split()[-1])
+    return float(lines[0].split()[-1])
 
 def runTest(program, dimension, numPEs, numSplits, numPrevent):
 
@@ -159,7 +159,12 @@ def runTest(program, dimension, numPEs, numSplits, numPrevent):
     # Check multiplication
     ans = importMatrix(f"{path}/C.txt")
     out = importMatrix(f"{path}/out.txt")
-    result = "PASS" if out == ans else "FAIL"
+    if out == ans:
+        result = "PASS"
+    elif ans == Matrix(0, 0):
+        result = "NONE"
+    else:
+        result = "FAIL"
 
     # Write results to a file
     info = [
@@ -177,7 +182,7 @@ def runTest(program, dimension, numPEs, numSplits, numPrevent):
 def importData():
 
     data = {}
-    with open(RESULTS_FILE) as file:
+    with open(RESULTS_FILE, "r") as file:
         for line in file:
             results = line.split()
             x = results[0];
@@ -237,9 +242,12 @@ def makePlots(pattern, data):
                     for val[i0] in vals[i0]:
                         if val[2] < 2 * (val[3] + val[4]): # Ensure we have enough nodes
                             continue
+
                         pointsX.append(val[i0])
                         pointsY.append(data[tuple(val)])
                     pyplot.plot(pointsX, pointsY, label=f"{labels[i1]} = {val[i1]}")
+
+                # Make the plot, now that we have the data
                 pyplot.xlabel(f"{labels[i0]}")
                 pyplot.ylabel("Runtime (s)")
                 pyplot.title(f"SDMM Runtime vs. {labels[i0]}\n" + \
@@ -247,13 +255,14 @@ def makePlots(pattern, data):
                              f"{labels[i3]} = {val[i3]}, " + \
                              f"{labels[i4]} = {val[i4]}")
                 pyplot.legend()
-                #pyplot.show()
+                pyplot.show()
                 fname = "_".join((
                     f"plot{pattern[:2]}",
                     f"{pattern[2]}{val[i2]}",
                     f"{pattern[3]}{val[i3]}",
                     f"{pattern[4]}{val[i4]}"))
                 pyplot.savefig(f"{path}/{fname}.png")
+                pyplot.clf()
                 plots += 1
                 progressBar(plots / total)
         
@@ -265,8 +274,9 @@ def main():
             pass
 
     # Precompute results
+    check = (input("Check for correctness? [y/N] ").lower() == "y")
     for d in D_VALS:
-        precompute(d)
+        precompute(d, check)
     
     # Run lots of tests
     for x in X_VALS:
