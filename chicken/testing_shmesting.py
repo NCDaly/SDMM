@@ -15,7 +15,7 @@ N_VALS = [16, 32, 48, 64]
 S_VALS = [2, 4, 8, 16]
 P_VALS = [2, 4, 8, 16]
 
-PATTERNS = ["d"]
+PATTERNS = ["d", "ps", "sp"]
 
 def randmod():
 
@@ -233,6 +233,7 @@ def makePlots(pattern, data):
                 if val[2] < 2 * (val[3] + val[4]): # Ensure we have enough nodes
                     plots += 1
                     continue
+
                 for val[i1] in vals[i1]:
                     if val[2] < 2 * (val[3] + val[4]): # Ensure we have enough nodes
                         continue
@@ -255,7 +256,7 @@ def makePlots(pattern, data):
                              f"{labels[i3]} = {val[i3]}, " + \
                              f"{labels[i4]} = {val[i4]}")
                 pyplot.legend()
-                pyplot.show()
+                #pyplot.show()
                 fname = "_".join((
                     f"plot{pattern[:2]}",
                     f"{pattern[2]}{val[i2]}",
