@@ -195,7 +195,7 @@ int print_equation(int *coeff, int len) {
   return terms_printed;
 }
 
-
+/*
 int main() {
 
   int size;
@@ -246,3 +246,4 @@ int main() {
   free(coeff);
   free(data);
 }
+*/

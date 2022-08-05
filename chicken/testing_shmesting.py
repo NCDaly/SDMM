@@ -9,13 +9,13 @@ MERSENNE_PRIME = pow(2, 31) - 1
 
 RESULTS_FILE = "results.txt"
 
-X_VALS = ["sdmm_final", "sdmm_final2"]
+X_VALS = ["sdmm_final_boring", "sdmm_transpose", "single_core", "single_core_strassen"]
 D_VALS = [128, 256, 512, 1024, 2048]
 N_VALS = [16, 32, 48, 64]
 S_VALS = [2, 4, 8, 16]
 P_VALS = [2, 4, 8, 16]
 
-PATTERNS = ["d", "ps", "sp"]
+PATTERNS = ["d", "n", "s", "p", "ps", "sp", "ds", "dp", "pd", "sd"]
 
 def randmod():
 
@@ -138,10 +138,10 @@ def runTest(program, dimension, numPEs, numSplits, numPrevent):
     # Create command
     path = f"test/test{dimension}"
     command = [
-        "oshrun",
-        "-np",
-        str(numPEs),
-        program,
+        #"oshrun",
+        #"-np",
+        #str(numPEs),
+        f"./{program}",
         str(numSplits),
         str(numPrevent),
         f"{path}/A.txt",
@@ -168,7 +168,7 @@ def runTest(program, dimension, numPEs, numSplits, numPrevent):
 
     # Write results to a file
     info = [
-        f"{program:<16}"
+        f"{program:<24}"
         f"D={path[9:]:<4}",
         f"N={numPEs:<2}",
         f"S={numSplits:<2}",

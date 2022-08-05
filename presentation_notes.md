@@ -2,11 +2,13 @@
 
 ## 1. Coding Theory and SDMM
 
-- [responding to Bailey] So what does that look like? How do we do this?
+[Bailey talks]
+
+- So what does that look like? How do we do this?
 - Bring together two seemingly opposite concepts: cryptographic secret sharing, and coding theory.
 - Secret sharing is taking a message and splitting it up into pieces, such that you need to combine a certain number of pieces to learn anything at all about the messsage.
   - examples: "two-man rule" in nuclear launch sequences
-- Coding theory is taking a message and encoding it into a longer codeword, such that even if part of the codeword is lost you can still recover the message in full.
+- Coding theory is taking a message and encoding it into a longer codeword, such that even if part of the codeword is lost you can correct or at least detect the error
   - examples: checksums, credit card numbers, ISBNs
 - These seem contradictory: one makes the message harder to recover, one makes it easier to recover.
 - Actually just two ways of looking at the same question: how much information do we need to recover the message?
@@ -62,14 +64,15 @@
     - The other type, the "scalars", is your field
     - Vector space means you can multiply vectors by scalars
   - Matrices of field elements form a vector space over that field
+    - Matrix addition/subtraction and scalar multiplication are all element-wise
   - That's what lets us build polynomial codes using matrices as coefficients
 
 - Now let's put this all together: the Secure Mat-Dot algorithm (what we implemented this summer)
-  - Example: yo want to multiply two 2x2 matrices $A$ and $B$
+  - Example: you want to multiply two 2x2 matrices $A$ and $B$
     - Let's split $A$ into two columns ($A_1$ and $A_2$), $B$ into two rows ($B_1$ and $B_2$)
     - So you can write the product as $AB = A_1 B_1 + A_2 B_2$
     - Let's make polynomial codes for (the pieces of) $A$ and $B$:
-      - $f(x) = A_1 + A_2 x + R x^2$, where $R$ is a ranodm 2x1 matrix
+      - $f(x) = A_1 + A_2 x + R x^2$, where $R$ is a random 2x1 matrix
       - $g(x) = B_2 + B_1 x + S x^2$, where $S$ is a random 1x2 matrix
       - note: each of these functions returns a matrix
       - remember, we're in a vector space!
@@ -89,16 +92,20 @@
       - Want to split your matrices into 3, 4, 40 parts? You can do that!
         - Smaller multiplications ==> less work for your friends :)
 	- More terms ==> need more friends, more points ==> more work for you :(
-      - Dont trust your friends? Afraid two of them will share their points
+      - Dont trust your friends? Afraid two of them will work together?
         - Just add more random terms!
 	- Again, more terms ==> need more friends, more work :(
     - This seems like more work than just doing it yourself! A few considerations:
       - As matrices get bigger, adding does get harder, but multiplying gets WAY harder!
         - Doing more additions may be an acceptable tradeoff if it means smaller (faster) multiplications
       - Maybe LinAlg isn't your strong suit; maybe your friends are matrix multiplication whizzes
-        - SDMM can give you access to compute power far exceeding your own
-
-- That's the big picture of SDMM, how it works and why it's useful
-- Now let's talk about what we did this summer to make it happen
+        - this algo can give you access to compute power far exceeding your own
 
 ## 2. Implementation: Interpolation
+
+- Once we have the points, have a system of linear equations (i.e. a matrix)
+- Need to invert the matrix! No problem: node 0 isn't doing anything currently
+  - problem: we don't know in advance which points we'll have
+- Special form ("Vandermonde matrix")
+  - We can find a formula for the inverse
+  - And a formula to build it in realtime
